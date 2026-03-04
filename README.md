@@ -34,7 +34,7 @@ A self-hosted knowledge base for forensic artifacts and indicators of compromise
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Anthonypjohnson/forensic-artifacts
 cd forensic-artifacts
 
 cp .env.example .env
