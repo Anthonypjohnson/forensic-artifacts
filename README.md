@@ -34,7 +34,7 @@ A self-hosted knowledge base for forensic artifacts and indicators of compromise
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/Anthonypjohnson/forensic-artifacts.git
+git clone <repo-url>
 cd forensic-artifacts
 
 cp .env.example .env
@@ -58,6 +58,38 @@ Edit `allowed_ips.conf` — one entry per line, supports single IPs and CIDR ran
 ```
 
 Changes take effect immediately without restarting.
+
+#### Finding your IP address
+
+**macOS**
+```bash
+ipconfig getifaddr en0
+```
+> If that returns nothing, try `en1` (Wi-Fi vs Ethernet). To see all interfaces: `ifconfig | grep "inet "`
+
+**Windows** (Command Prompt or PowerShell)
+```cmd
+ipconfig
+```
+> Look for the **IPv4 Address** under your active adapter (Ethernet or Wi-Fi).
+
+#### Important — Docker NAT and hairpin NAT
+
+Due to the way Docker Desktop and home/office routers handle NAT, the IP the application sees may **not** be your machine's local IP (`192.168.x.x`). Instead it may appear as your **public IP** (the one assigned by your ISP to your router).
+
+To find the exact IP being seen by the app, check the nginx logs after a blocked or allowed request:
+
+```bash
+docker compose logs nginx | tail -20
+```
+
+The first field on each line is the client IP the app received. Use that value in `allowed_ips.conf`.
+
+If multiple people on the same network need access, whitelist the whole subnet instead of individual IPs:
+
+```
+192.168.1.0/24
+```
 
 ### 3. Start
 
