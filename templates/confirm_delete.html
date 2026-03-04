@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Delete — {{ artifact.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6">
+    <div class="card bg-dark border-danger">
+      <div class="card-header border-danger text-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+      </div>
+      <div class="card-body">
+        <p class="text-light mb-1">You are about to permanently delete:</p>
+        <p class="text-light fw-bold fs-5 mb-3">{{ artifact.name }}</p>
+        <p class="text-secondary small mb-4">
+          This will also delete all edit history for this artifact. This action cannot be undone.
+        </p>
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash me-1"></i>Delete Permanently
+            </button>
+            <a href="{{ url_for('artifacts.detail', artifact_id=artifact.id) }}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

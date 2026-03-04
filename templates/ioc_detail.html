@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% set sev_badge = {
+    'Low': 'bg-secondary',
+    'Medium': 'bg-warning text-dark',
+    'High': 'bg-danger',
+    'Critical': 'bg-danger'
+} %}
+{% block title %}IOC #{{ ioc.id }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-start justify-content-between mt-2 mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('iocs.index') }}" class="text-secondary">IOCs</a>
+        </li>
+        {% if ioc.case_name %}
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('iocs.index', case=ioc.case_name) }}"
+             class="text-secondary">{{ ioc.case_name }}</a>
+        </li>
+        {% endif %}
+        <li class="breadcrumb-item active text-light">IOC #{{ ioc.id }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex align-items-center gap-2 mt-1">
+      <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }} fs-6">{{ ioc.severity }}</span>
+      {% if ioc.case_name %}
+      <span class="text-secondary font-monospace">{{ ioc.case_name }}</span>
+      {% endif %}
+    </div>
+    {% if ioc.tags %}
+    <div class="d-flex flex-wrap gap-1 mt-2">
+      {% for tag in ioc.tags %}
+      <a href="{{ url_for('iocs.index', tag=tag.name) }}"
+         class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2 mt-1 flex-shrink-0">
+    <a href="{{ url_for('iocs.edit_ioc', ioc_id=ioc.id) }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    <a href="{{ url_for('iocs.delete_ioc', ioc_id=ioc.id) }}"
+       class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {# Left column: indicator groups #}
+  <div class="col-lg-8">
+
+    {# Network Indicators #}
+    {% if ioc.ip_address or ioc.domain or ioc.url or ioc.email %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-globe me-1"></i>Network Indicators
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if ioc.ip_address %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">IP Address</span>
+          <span class="font-monospace text-success">{{ ioc.ip_address }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.domain %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Domain</span>
+          <span class="font-monospace text-success">{{ ioc.domain }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.url %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">URL</span>
+          <span class="font-monospace text-success text-break">{{ ioc.url }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.email %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Email</span>
+          <span class="font-monospace text-success">{{ ioc.email }}</span>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# File Indicators #}
+    {% if ioc.filename or ioc.file_path or ioc.hash_value %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-file-earmark-binary me-1"></i>File Indicators
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if ioc.filename %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Filename</span>
+          <span class="font-monospace text-success">{{ ioc.filename }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.file_path %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">File Path</span>
+          <span class="font-monospace text-success text-break">{{ ioc.file_path }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.hash_value %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">
+            Hash{% if ioc.hash_type %} ({{ ioc.hash_type }}){% endif %}
+          </span>
+          <span class="font-monospace text-success text-break">{{ ioc.hash_value }}</span>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# System Indicators #}
+    {% if ioc.hostname or ioc.registry_key or ioc.command_line or ioc.user_account %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-pc-display me-1"></i>System Indicators
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if ioc.hostname %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Hostname / System</span>
+          <span class="font-monospace text-success">{{ ioc.hostname }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.user_account %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">User Account</span>
+          <span class="font-monospace text-success">{{ ioc.user_account }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.registry_key %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Registry Key</span>
+          <span class="font-monospace text-success text-break">{{ ioc.registry_key }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.command_line %}
+        <li class="list-group-item bg-dark border-secondary">
+          <span class="text-secondary small d-block">Command Line</span>
+          <pre class="font-monospace text-success mb-0 small" style="white-space: pre-wrap;">{{ ioc.command_line }}</pre>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# Notes #}
+    {% if ioc.notes %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-journal-text me-1"></i>Notes
+      </div>
+      <div class="card-body">
+        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ ioc.notes }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# Right column: metadata + history #}
+  <div class="col-lg-4">
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-info-circle me-1"></i>Metadata
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Severity</span>
+          <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }}">{{ ioc.severity }}</span>
+        </li>
+        {% if ioc.case_name %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Case / Hunt</span>
+          <span class="text-light small font-monospace">{{ ioc.case_name }}</span>
+        </li>
+        {% endif %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created by</span>
+          <span class="text-light small">{{ ioc.created_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created at</span>
+          <span class="text-light small">{{ ioc.created_at[:10] }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated by</span>
+          <span class="text-light small">{{ ioc.updated_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated at</span>
+          <span class="text-light small">{{ ioc.updated_at[:16].replace('T', ' ') }}</span>
+        </li>
+      </ul>
+    </div>
+
+    {# Edit history accordion #}
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small d-flex align-items-center">
+        <i class="bi bi-clock-history me-1"></i>Edit History
+        <span class="badge bg-secondary ms-1">{{ history|length }}</span>
+        <a href="{{ url_for('iocs.ioc_history', ioc_id=ioc.id) }}"
+           class="btn btn-outline-secondary btn-sm ms-auto py-0">
+          <i class="bi bi-list-ul me-1"></i>Full History
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if history %}
+        <div class="accordion accordion-flush" id="historyAccordion">
+          {% for entry in history %}
+          <div class="accordion-item bg-dark border-secondary">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed bg-dark text-light small py-2"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#hist-{{ loop.index }}">
+                <span class="me-2 text-warning">{{ entry.edited_at[:10] }}</span>
+                <span class="text-secondary me-2">{{ entry.editor_name }}</span>
+                <span class="text-muted fst-italic text-truncate" style="max-width: 120px;">
+                  {{ entry.change_summary }}
+                </span>
+              </button>
+            </h2>
+            <div id="hist-{{ loop.index }}" class="accordion-collapse collapse"
+                 data-bs-parent="#historyAccordion">
+              <div class="accordion-body py-2 px-3 small">
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Note:</strong> {{ entry.change_summary }}
+                </p>
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Editor:</strong> {{ entry.editor_name }}
+                </p>
+                <p class="mb-0 text-secondary">
+                  <strong class="text-light">Time:</strong>
+                  {{ entry.edited_at[:16].replace('T', ' ') }} UTC
+                </p>
+                {% if entry.snapshot %}
+                <hr class="border-secondary my-2">
+                <p class="text-secondary mb-1"><strong class="text-light">Previous state:</strong></p>
+                <pre class="small text-secondary mb-0" style="white-space: pre-wrap; font-size: 0.75em;">{{ entry.snapshot | tojson(indent=2) }}</pre>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary small p-3 mb-0">No edit history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

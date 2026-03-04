@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.git/
+.gitignore
+.env
+database/*.db
+database/*.sqlite3
+*.log
+.DS_Store
+.vscode/
+.idea/
+# Never bake TLS certificates into the image
+certs/

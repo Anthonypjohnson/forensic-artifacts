@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}500 Server Error{% endblock %}
+{% block content %}
+<div class="text-center mt-5 py-5">
+  <p class="display-1 text-secondary font-monospace">500</p>
+  <h4 class="text-light mb-3">Internal server error</h4>
+  <p class="text-secondary mb-4">Something went wrong. Check the server logs.</p>
+  <a href="{{ url_for('artifacts.index') }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Artifacts
+  </a>
+</div>
+{% endblock %}

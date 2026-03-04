@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ artifact.name }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-start justify-content-between mt-2 mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('artifacts.index') }}" class="text-secondary">Artifacts</a>
+        </li>
+        <li class="breadcrumb-item active text-light">{{ artifact.name }}</li>
+      </ol>
+    </nav>
+    <h3 class="mb-0 text-light">{{ artifact.name }}</h3>
+    {% if artifact.tags %}
+    <div class="d-flex flex-wrap gap-1 mt-2">
+      {% for tag in artifact.tags %}
+      <a href="{{ url_for('artifacts.index', tag=tag.name) }}"
+         class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2 mt-1 flex-shrink-0">
+    <a href="{{ url_for('artifacts.edit_artifact', artifact_id=artifact.id) }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    <a href="{{ url_for('artifacts.delete_artifact', artifact_id=artifact.id) }}"
+       class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {# Left column: main content #}
+  <div class="col-lg-8">
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-geo-alt me-1"></i>Location
+      </div>
+      <div class="card-body position-relative">
+        <pre class="text-success font-monospace mb-0 location-block" id="location-text">{{ artifact.location }}</pre>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                id="copy-btn" title="Copy to clipboard" onclick="copyLocation()">
+          <i class="bi bi-clipboard" id="copy-icon"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-tools me-1"></i>Tools
+      </div>
+      <div class="card-body">
+        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.tools }}</p>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-list-ol me-1"></i>Instructions
+      </div>
+      <div class="card-body">
+        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.instructions }}</p>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-lightbulb me-1"></i>Significance
+      </div>
+      <div class="card-body">
+        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.significance }}</p>
+      </div>
+    </div>
+  </div>
+
+  {# Right column: metadata + history #}
+  <div class="col-lg-4">
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-info-circle me-1"></i>Metadata
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created by</span>
+          <span class="text-light small">{{ artifact.created_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created at</span>
+          <span class="text-light small">{{ artifact.created_at[:10] }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated by</span>
+          <span class="text-light small">{{ artifact.updated_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated at</span>
+          <span class="text-light small">{{ artifact.updated_at[:16].replace('T', ' ') }}</span>
+        </li>
+      </ul>
+    </div>
+
+    {# Edit history accordion #}
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small d-flex align-items-center">
+        <i class="bi bi-clock-history me-1"></i>Edit History
+        <span class="badge bg-secondary ms-1">{{ history|length }}</span>
+        <a href="{{ url_for('artifacts.artifact_history', artifact_id=artifact.id) }}"
+           class="btn btn-outline-secondary btn-sm ms-auto py-0">
+          <i class="bi bi-list-ul me-1"></i>Full History
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if history %}
+        <div class="accordion accordion-flush" id="historyAccordion">
+          {% for entry in history %}
+          <div class="accordion-item bg-dark border-secondary">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed bg-dark text-light small py-2"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#hist-{{ loop.index }}">
+                <span class="me-2 text-success">{{ entry.changed_at[:10] }}</span>
+                <span class="text-secondary me-2">{{ entry.editor_name }}</span>
+                <span class="text-muted fst-italic text-truncate" style="max-width: 120px;">
+                  {{ entry.change_summary }}
+                </span>
+              </button>
+            </h2>
+            <div id="hist-{{ loop.index }}" class="accordion-collapse collapse"
+                 data-bs-parent="#historyAccordion">
+              <div class="accordion-body py-2 px-3 small">
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Note:</strong> {{ entry.change_summary }}
+                </p>
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Editor:</strong> {{ entry.editor_name }}
+                </p>
+                <p class="mb-0 text-secondary">
+                  <strong class="text-light">Time:</strong>
+                  {{ entry.changed_at[:16].replace('T', ' ') }} UTC
+                </p>
+                {% if entry.snapshot %}
+                <hr class="border-secondary my-2">
+                <p class="text-secondary mb-1"><strong class="text-light">Previous state:</strong></p>
+                <pre class="small text-secondary mb-0" style="white-space: pre-wrap; font-size: 0.75em;">{{ entry.snapshot | tojson(indent=2) }}</pre>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary small p-3 mb-0">No edit history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyLocation() {
+  const text = document.getElementById('location-text').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const icon = document.getElementById('copy-icon');
+    icon.className = 'bi bi-clipboard-check text-success';
+    setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 2000);
+  });
+}
+</script>
+{% endblock %}

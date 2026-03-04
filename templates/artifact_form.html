@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="mt-2 mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-1">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('artifacts.index') }}" class="text-secondary">Artifacts</a>
+      </li>
+      {% if artifact %}
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('artifacts.detail', artifact_id=artifact.id) }}"
+           class="text-secondary">{{ artifact.name }}</a>
+      </li>
+      {% endif %}
+      <li class="breadcrumb-item active text-light">{{ title }}</li>
+    </ol>
+  </nav>
+  <h4 class="mb-0 text-light">{{ title }}</h4>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      {# Artifact fields #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-file-earmark-text me-1"></i>Artifact Details
+        </div>
+        <div class="card-body">
+          {% for field in [form.name, form.location, form.tools, form.instructions, form.significance] %}
+          <div class="mb-3">
+            {{ field.label(class="form-label text-secondary small") }}
+            {% if field.type == 'TextAreaField' %}
+              {{ field(class="form-control bg-dark border-secondary text-light"
+                        ~ (" font-monospace" if field.name == "location" else ""),
+                       rows=4 if field.name in ["instructions", "significance"] else 3,
+                       placeholder=field.description) }}
+            {% else %}
+              {{ field(class="form-control bg-dark border-secondary text-light",
+                       placeholder=field.description) }}
+            {% endif %}
+            {% if field.errors %}
+              {% for error in field.errors %}
+              <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <div class="mb-0">
+            {{ form.tags.label(class="form-label text-secondary small") }}
+            {{ form.tags(class="form-control bg-dark border-secondary text-light",
+                         placeholder=form.tags.description,
+                         id="tags-input",
+                         autocomplete="off") }}
+            <div class="form-text text-secondary small">Comma-separated (e.g. Windows, Registry)</div>
+            {% if form.tags.errors %}
+              {% for error in form.tags.errors %}
+              <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# Authorship section #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-person-badge me-1"></i>Authorship
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              {{ form.editor_name.label(class="form-label text-secondary small") }}
+              {{ form.editor_name(class="form-control bg-dark border-secondary text-secondary",
+                                  readonly=True) }}
+              {% if form.editor_name.errors %}
+                {% for error in form.editor_name.errors %}
+                <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+            <div class="col-sm-6">
+              {{ form.change_note.label(class="form-label text-secondary small") }}
+              {{ form.change_note(class="form-control bg-dark border-secondary text-light",
+                                  placeholder=form.change_note.description) }}
+              {% if form.change_note.errors %}
+                {% for error in form.change_note.errors %}
+                <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        {{ form.submit(class="btn btn-success") }}
+        {% if artifact %}
+        <a href="{{ url_for('artifacts.detail', artifact_id=artifact.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+        {% else %}
+        <a href="{{ url_for('artifacts.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tag autocomplete
+const tagsInput = document.getElementById('tags-input');
+if (tagsInput) {
+  tagsInput.addEventListener('keyup', debounce(autocompleteTag, 300));
+}
+</script>
+{% endblock %}

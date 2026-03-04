@@ -1,0 +1,34 @@
+<div class="col">
+  <div class="card h-100 border-secondary bg-dark card-hover">
+    <div class="card-body">
+      <h6 class="card-title text-light mb-1">
+        <a href="{{ url_for('artifacts.detail', artifact_id=artifact.id) }}"
+           class="text-decoration-none text-light stretched-link artifact-link">
+          {{ artifact.name }}
+        </a>
+      </h6>
+      <p class="card-text font-monospace text-success small mb-2 location-snippet">
+        {{ artifact.location[:80] }}{% if artifact.location|length > 80 %}…{% endif %}
+      </p>
+      <p class="card-text text-secondary small mb-2">
+        {{ artifact.significance[:120] }}{% if artifact.significance|length > 120 %}…{% endif %}
+      </p>
+      {% if artifact.tags %}
+      <div class="d-flex flex-wrap gap-1 mt-auto">
+        {% for tag in artifact.tags %}
+        <a href="{{ url_for('artifacts.index', tag=tag.name) }}"
+           class="badge bg-secondary text-decoration-none tag-pill"
+           style="position: relative; z-index: 1;">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="card-footer text-secondary small border-secondary">
+      <i class="bi bi-clock me-1"></i>{{ artifact.updated_at[:10] }}
+      &nbsp;·&nbsp;
+      <i class="bi bi-person me-1"></i>{{ artifact.updated_by }}
+    </div>
+  </div>
+</div>

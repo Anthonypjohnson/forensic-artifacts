@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}History — IOC #{{ ioc.id }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="mt-2 mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-1">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('iocs.index') }}" class="text-secondary">IOCs</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('iocs.detail', ioc_id=ioc.id) }}"
+           class="text-secondary">IOC #{{ ioc.id }}</a>
+      </li>
+      <li class="breadcrumb-item active text-light">History</li>
+    </ol>
+  </nav>
+  <h3 class="mb-0 text-light">
+    <i class="bi bi-clock-history me-2"></i>Version History
+    <span class="fs-6 text-secondary ms-2 fw-normal">IOC #{{ ioc.id }}
+      {% if ioc.case_name %} — {{ ioc.case_name }}{% endif %}
+    </span>
+  </h3>
+</div>
+
+{% if versions %}
+  {% for v in versions %}
+  <div class="card bg-dark border-warning border-opacity-25 mb-3">
+    <div class="card-header border-warning border-opacity-25 d-flex align-items-center gap-2 flex-wrap">
+      <span class="badge bg-secondary font-monospace">
+        {{ v.entry.edited_at[:16].replace('T', ' ') }} UTC
+      </span>
+      <span class="text-secondary small">{{ v.entry.editor_name }}</span>
+      {% if v.entry.change_summary %}
+      <span class="text-muted fst-italic small text-truncate" style="max-width: 300px;">
+        {{ v.entry.change_summary }}
+      </span>
+      {% endif %}
+      <span class="ms-auto">
+        {% if v.action == 'Created' %}
+        <span class="badge bg-success">Created</span>
+        {% else %}
+        <span class="badge bg-secondary">Edited</span>
+        {% endif %}
+      </span>
+    </div>
+    <div class="card-body p-0">
+      {% if v.diff %}
+      <table class="table table-dark table-sm mb-0 border-secondary">
+        <thead class="text-secondary small">
+          <tr>
+            <th style="width: 14%;">Field</th>
+            <th style="width: 43%;">Before</th>
+            <th style="width: 43%;">After</th>
+          </tr>
+        </thead>
+        <tbody class="small">
+          {% for d in v.diff %}
+          <tr>
+            <td class="text-secondary text-nowrap">{{ d.field | replace('_', ' ') | title }}</td>
+            <td>
+              {% if d.before %}
+              <pre class="text-danger mb-0" style="white-space: pre-wrap; font-size: 0.85em;">{{ d.before }}</pre>
+              {% else %}
+              <span class="text-muted fst-italic">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.after %}
+              <pre class="text-success mb-0" style="white-space: pre-wrap; font-size: 0.85em;">{{ d.after }}</pre>
+              {% else %}
+              <span class="text-muted fst-italic">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-secondary small p-3 mb-0 fst-italic">No field changes recorded.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="text-center py-5 text-secondary">
+  <i class="bi bi-clock fs-1 d-block mb-2"></i>
+  No history entries yet.
+</div>
+{% endif %}
+{% endblock %}

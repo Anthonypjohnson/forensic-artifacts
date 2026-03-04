@@ -1,0 +1,36 @@
+# Environment and secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Database
+database/*.db
+database/*.sqlite3
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TLS certificates (private keys must never be committed)
+certs/*.pem
+certs/*.key
+certs/*.crt
+certs/*.pfx
+certs/*.p12
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

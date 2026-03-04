@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Sign In — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-sm-8 col-md-5 col-lg-4">
+    <div class="text-center mb-4">
+      <span class="text-success display-6 font-monospace">
+        <i class="bi bi-fingerprint"></i>
+      </span>
+      <h5 class="mt-2 text-light">ForensicArtifacts</h5>
+      <p class="text-secondary small">Internal knowledge base — authorized access only</p>
+    </div>
+
+    <div class="card bg-dark border-secondary">
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            {{ form.username.label(class="form-label text-secondary small") }}
+            {{ form.username(class="form-control bg-dark border-secondary text-light",
+                             autofocus=true, autocomplete="username") }}
+          </div>
+          <div class="mb-4">
+            {{ form.password.label(class="form-label text-secondary small") }}
+            {{ form.password(class="form-control bg-dark border-secondary text-light",
+                             autocomplete="current-password") }}
+          </div>
+          {{ form.submit(class="btn btn-success w-100") }}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Activity Log — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mt-2 mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('admin.users') }}" class="text-secondary">Admin</a>
+        </li>
+        <li class="breadcrumb-item active text-light">Activity Log</li>
+      </ol>
+    </nav>
+    <h3 class="mb-0 text-light">
+      <i class="bi bi-journal-text me-2"></i>Activity Log
+    </h3>
+  </div>
+</div>
+
+{# Filter bar #}
+<form method="get" class="row g-2 mb-4 align-items-end">
+  <div class="col-auto">
+    <label class="form-label text-secondary small mb-1">Type</label>
+    <select name="kind" class="form-select form-select-sm bg-dark text-light border-secondary"
+            style="min-width: 130px;">
+      <option value=""     {% if not kind %}selected{% endif %}>All</option>
+      <option value="artifact" {% if kind == 'artifact' %}selected{% endif %}>Artifact</option>
+      <option value="ioc"      {% if kind == 'ioc' %}selected{% endif %}>IOC</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <label class="form-label text-secondary small mb-1">Editor</label>
+    <input type="text" name="editor" value="{{ editor }}"
+           class="form-control form-control-sm bg-dark text-light border-secondary"
+           placeholder="Filter by editor…" style="min-width: 200px;">
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Apply</button>
+    {% if kind or editor %}
+    <a href="{{ url_for('admin.activity_log') }}" class="btn btn-outline-secondary btn-sm ms-1">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if entries %}
+<div class="table-responsive">
+  <table class="table table-dark table-hover table-sm align-middle border-secondary">
+    <thead class="text-secondary small">
+      <tr>
+        <th>Time</th>
+        <th>Type</th>
+        <th>Subject</th>
+        <th>Action</th>
+        <th>Editor</th>
+        <th>Note</th>
+      </tr>
+    </thead>
+    <tbody class="small">
+      {% for e in entries %}
+      <tr>
+        <td class="text-secondary font-monospace text-nowrap">
+          {{ e.ts[:16].replace('T', ' ') }}
+        </td>
+        <td>
+          {% if e.kind == 'artifact' %}
+          <span class="badge bg-success">Artifact</span>
+          {% else %}
+          <span class="badge bg-warning text-dark">IOC</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if e.kind == 'artifact' %}
+          <a href="{{ url_for('artifacts.detail', artifact_id=e.subject_id) }}"
+             class="text-light text-decoration-none">{{ e.subject_label }}</a>
+          {% else %}
+          <a href="{{ url_for('iocs.detail', ioc_id=e.subject_id) }}"
+             class="text-light text-decoration-none font-monospace">{{ e.subject_label }}</a>
+          {% endif %}
+        </td>
+        <td>
+          {% if e.action == 'created' %}
+          <span class="badge bg-success">Created</span>
+          {% else %}
+          <span class="badge bg-secondary">Edited</span>
+          {% endif %}
+        </td>
+        <td class="text-secondary">{{ e.editor_name }}</td>
+        <td class="text-muted fst-italic" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+            title="{{ e.note }}">{{ e.note }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="text-secondary small">Showing {{ entries|length }} entr{{ 'y' if entries|length == 1 else 'ies' }}.</p>
+{% else %}
+<div class="text-center py-5 text-secondary">
+  <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+  No activity entries found.
+</div>
+{% endif %}
+{% endblock %}

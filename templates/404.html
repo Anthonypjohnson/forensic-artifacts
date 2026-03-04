@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}404 Not Found{% endblock %}
+{% block content %}
+<div class="text-center mt-5 py-5">
+  <p class="display-1 text-secondary font-monospace">404</p>
+  <h4 class="text-light mb-3">Artifact not found</h4>
+  <p class="text-secondary mb-4">The page you're looking for doesn't exist or was deleted.</p>
+  <a href="{{ url_for('artifacts.index') }}" class="btn btn-outline-success">
+    <i class="bi bi-arrow-left me-1"></i>Back to Artifacts
+  </a>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% set sev_badge = {
+    'Low': 'bg-secondary',
+    'Medium': 'bg-warning text-dark',
+    'High': 'bg-danger',
+    'Critical': 'bg-danger'
+} %}
+{% set _indicator_priority = [
+    ioc.ip_address, ioc.domain, ioc.hash_value, ioc.filename,
+    ioc.hostname, ioc.url, ioc.email, ioc.registry_key,
+    ioc.command_line, ioc.user_account, ioc.file_path
+] %}
+{% set ns = namespace(primary='') %}
+{% for val in _indicator_priority %}
+  {% if val and not ns.primary %}{% set ns.primary = val %}{% endif %}
+{% endfor %}
+{% if not ns.primary %}{% set ns.primary = ioc.notes %}{% endif %}
+
+<div class="col">
+  <div class="card h-100 bg-dark card-hover
+              {% if ioc.severity == 'Critical' %}border-danger{% else %}border-secondary{% endif %}">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }}">{{ ioc.severity }}</span>
+        {% if ioc.case_name %}
+        <span class="badge bg-dark border border-secondary text-secondary small font-monospace">
+          {{ ioc.case_name[:30] }}{% if ioc.case_name|length > 30 %}…{% endif %}
+        </span>
+        {% endif %}
+      </div>
+      <p class="card-text font-monospace text-success small mb-2 text-break">
+        <a href="{{ url_for('iocs.detail', ioc_id=ioc.id) }}"
+           class="text-decoration-none text-success stretched-link">
+          {{ ns.primary[:100] }}{% if ns.primary|length > 100 %}…{% endif %}
+        </a>
+      </p>
+      {% if ioc.notes and ns.primary != ioc.notes %}
+      <p class="card-text text-secondary small mb-2">
+        {{ ioc.notes[:100] }}{% if ioc.notes|length > 100 %}…{% endif %}
+      </p>
+      {% endif %}
+      {% if ioc.tags %}
+      <div class="d-flex flex-wrap gap-1 mt-auto">
+        {% for tag in ioc.tags %}
+        <a href="{{ url_for('iocs.index', tag=tag.name) }}"
+           class="badge bg-secondary text-decoration-none tag-pill"
+           style="position: relative; z-index: 1;">
+          {{ tag.name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="card-footer text-secondary small border-secondary">
+      <i class="bi bi-clock me-1"></i>{{ ioc.updated_at[:10] }}
+      &nbsp;·&nbsp;
+      <i class="bi bi-person me-1"></i>{{ ioc.updated_by }}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/nginx-entrypoint.sh"]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx-entrypoint.sh:/nginx-entrypoint.sh:ro
+      # Drop cert.pem + key.pem here to use a CA-signed cert (Windows PKI etc.)
+      # If empty, a self-signed cert is generated automatically on first start.
+      - ./certs:/etc/nginx/certs
+    depends_on:
+      - app
+
+  app:
+    build: .
+    restart: unless-stopped
+    # Not exposed directly — nginx fronts it and forwards the real client IP
+    # via X-Forwarded-For. Set PROXY_COUNT=1 in .env.
+    env_file: .env
+    volumes:
+      # Named volume for SQLite persistence
+      - db_data:/app/database
+      # Bind-mount whitelist — edit on host, takes effect immediately (no restart needed)
+      - ./allowed_ips.conf:/app/allowed_ips.conf:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('localhost',5000),timeout=5); s.close()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  db_data:
+
+# Usage:
+#   docker compose up -d --build          # build and start
+#   docker compose exec app flask create-admin   # one-time admin setup
+#   docker compose logs -f                # follow logs
+#   docker compose down                   # stop (db_data volume kept)
+#   docker compose down -v                # stop + delete volume (destroys DB!)
