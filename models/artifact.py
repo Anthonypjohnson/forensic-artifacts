@@ -62,7 +62,7 @@ def get_by_id(artifact_id):
 
 def create(name, location, tools, instructions, significance, created_by, tags):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     cur = db.execute(
         """
         INSERT INTO artifacts
@@ -79,7 +79,7 @@ def create(name, location, tools, instructions, significance, created_by, tags):
 
 def update(artifact_id, name, location, tools, instructions, significance, updated_by, tags):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     db.execute(
         """
         UPDATE artifacts

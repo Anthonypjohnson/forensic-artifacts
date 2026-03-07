@@ -80,14 +80,14 @@ def record_failed_attempt(user_id):
     if row and row["failed_attempts"] >= MAX_FAILED_ATTEMPTS:
         lock_until = (
             datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-        ).strftime("%Y-%m-%dT%H:%M:%S")
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
         db.execute("UPDATE users SET locked_until = ? WHERE id = ?", (lock_until, user_id))
     db.commit()
 
 
 def record_successful_login(user_id):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     db.execute(
         "UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login = ? WHERE id = ?",
         (now, user_id),

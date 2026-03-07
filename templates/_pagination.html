@@ -1,0 +1,75 @@
+{% macro render(pag, endpoint, args={}) %}
+{% if pag.total > 0 %}
+<div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+
+  {# Per-page selector #}
+  <div class="d-flex align-items-center gap-1">
+    <span class="text-secondary small me-1">Per page:</span>
+    {% for n in [25, 50, 100, 500] %}
+    <a href="{{ url_for(endpoint, page=1, per_page=n, **args) }}"
+       class="btn btn-sm {% if pag.per_page == n %}btn-secondary{% else %}btn-outline-secondary{% endif %}">{{ n }}</a>
+    {% endfor %}
+  </div>
+
+  {# Count summary #}
+  {% set first = (pag.page - 1) * pag.per_page + 1 %}
+  {% set last  = [pag.page * pag.per_page, pag.total] | min %}
+  <span class="text-secondary small">{{ first }}–{{ last }} of {{ pag.total }}</span>
+
+  {# Page navigation #}
+  {% if pag.total_pages > 1 %}
+  {% set start_p = [1, pag.page - 2] | max %}
+  {% set end_p   = [pag.total_pages, pag.page + 2] | min %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination pagination-sm mb-0">
+
+      <li class="page-item {% if pag.page == 1 %}disabled{% endif %}">
+        <a class="page-link bg-dark border-secondary text-light"
+           href="{{ url_for(endpoint, page=pag.page - 1, per_page=pag.per_page, **args) }}"
+           aria-label="Previous">&#8249;</a>
+      </li>
+
+      {% if start_p > 1 %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-light"
+           href="{{ url_for(endpoint, page=1, per_page=pag.per_page, **args) }}">1</a>
+      </li>
+      {% if start_p > 2 %}
+      <li class="page-item disabled">
+        <span class="page-link bg-dark border-secondary text-secondary">…</span>
+      </li>
+      {% endif %}
+      {% endif %}
+
+      {% for p in range(start_p, end_p + 1) %}
+      <li class="page-item {% if p == pag.page %}active{% endif %}">
+        <a class="page-link {% if p == pag.page %}bg-secondary border-secondary text-white{% else %}bg-dark border-secondary text-light{% endif %}"
+           href="{{ url_for(endpoint, page=p, per_page=pag.per_page, **args) }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+
+      {% if end_p < pag.total_pages %}
+      {% if end_p < pag.total_pages - 1 %}
+      <li class="page-item disabled">
+        <span class="page-link bg-dark border-secondary text-secondary">…</span>
+      </li>
+      {% endif %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-light"
+           href="{{ url_for(endpoint, page=pag.total_pages, per_page=pag.per_page, **args) }}">{{ pag.total_pages }}</a>
+      </li>
+      {% endif %}
+
+      <li class="page-item {% if pag.page == pag.total_pages %}disabled{% endif %}">
+        <a class="page-link bg-dark border-secondary text-light"
+           href="{{ url_for(endpoint, page=pag.page + 1, per_page=pag.per_page, **args) }}"
+           aria-label="Next">&#8250;</a>
+      </li>
+
+    </ul>
+  </nav>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endmacro %}

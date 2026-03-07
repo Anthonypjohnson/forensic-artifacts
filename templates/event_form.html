@@ -49,20 +49,28 @@
         <div class="card-body">
           <div class="d-flex gap-2 align-items-end">
             <div class="flex-grow-1">{{ field_row(form.ioc_id) }}</div>
-            <div class="mb-3">
+            <div class="mb-3 d-flex gap-1">
               <a href="{{ url_for('iocs.new_ioc') }}" target="_blank"
                  class="btn btn-outline-warning btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>New IOC
               </a>
+              <button type="button" id="refresh-ioc-btn" class="btn btn-outline-secondary btn-sm"
+                      title="Reload IOC list">
+                <i class="bi bi-arrow-repeat me-1"></i>Reload
+              </button>
             </div>
           </div>
           <div class="d-flex gap-2 align-items-end">
             <div class="flex-grow-1">{{ field_row(form.linked_task_id) }}</div>
-            <div class="mb-3">
+            <div class="mb-3 d-flex gap-1">
               <a href="{{ url_for('tasks.new_task') }}" target="_blank"
                  class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-plus-lg me-1"></i>New Task
               </a>
+              <button type="button" id="refresh-task-btn" class="btn btn-outline-secondary btn-sm"
+                      title="Reload task list">
+                <i class="bi bi-arrow-repeat me-1"></i>Reload
+              </button>
             </div>
           </div>
         </div>
@@ -76,12 +84,28 @@
         <div class="card-body">
           <div class="mb-3">
             {{ form.event_datetime.label(class="form-label text-secondary small") }}
-            <input type="datetime-local"
-                   class="form-control bg-dark border-secondary text-light"
-                   id="{{ form.event_datetime.id }}"
+            <div class="d-flex gap-2 flex-wrap">
+              <div class="flex-grow-1" style="min-width:14rem;">
+                <input type="datetime-local"
+                       class="form-control bg-dark border-secondary text-light"
+                       id="dt_local_display"
+                       value="{{ form.event_datetime.data or '' }}"
+                       step="1">
+              </div>
+              <div style="min-width:14rem; max-width:24rem; flex-shrink:0;">
+                <select class="form-select bg-dark border-secondary text-light"
+                        id="dt_tz_select" title="Timezone of the date/time entered above">
+                  {# Options built by JS below #}
+                </select>
+              </div>
+            </div>
+            {# Hidden field — always holds the UTC value that gets submitted #}
+            <input type="hidden"
+                   id="dt_utc_hidden"
                    name="{{ form.event_datetime.name }}"
-                   value="{{ form.event_datetime.data or '' }}"
-                   step="1">
+                   value="{{ form.event_datetime.data or '' }}">
+            <div class="mt-1 font-monospace small" id="dt_utc_preview"
+                 style="color:#6c757d; min-height:1.2em;"></div>
             {% for error in form.event_datetime.errors %}
             <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
             {% endfor %}
@@ -207,7 +231,289 @@
 
 {% block extra_js %}
 <script>
-// IOC tag autocomplete (reuses the same /api/ioc-tags endpoint)
+/* ── Datetime timezone picker ─────────────────────────────────────────────── */
+(function () {
+  var CONFIGURED_TZ = {{ tz_list | tojson }};
+
+  var ALL_TZ = [
+    'UTC',
+    /* Americas */
+    'America/New_York','America/Chicago','America/Denver','America/Phoenix',
+    'America/Los_Angeles','America/Anchorage','Pacific/Honolulu',
+    'America/Toronto','America/Vancouver','America/Edmonton',
+    'America/Winnipeg','America/Halifax','America/St_Johns',
+    'America/Sao_Paulo','America/Argentina/Buenos_Aires','America/Lima',
+    'America/Bogota','America/Santiago','America/Caracas','America/Mexico_City',
+    /* Europe */
+    'Europe/London','Europe/Dublin','Europe/Lisbon',
+    'Europe/Paris','Europe/Berlin','Europe/Amsterdam','Europe/Brussels',
+    'Europe/Madrid','Europe/Rome','Europe/Zurich','Europe/Vienna',
+    'Europe/Prague','Europe/Warsaw','Europe/Budapest','Europe/Bucharest',
+    'Europe/Stockholm','Europe/Oslo','Europe/Copenhagen','Europe/Helsinki',
+    'Europe/Athens','Europe/Kyiv','Europe/Minsk',
+    'Europe/Moscow','Europe/Istanbul','Europe/Samara',
+    /* Africa / Middle East */
+    'Africa/Cairo','Africa/Johannesburg','Africa/Lagos','Africa/Nairobi',
+    'Africa/Casablanca',
+    'Asia/Jerusalem','Asia/Riyadh','Asia/Kuwait','Asia/Beirut','Asia/Dubai',
+    'Asia/Muscat','Asia/Baku','Asia/Tbilisi','Asia/Yerevan',
+    /* Asia */
+    'Asia/Karachi','Asia/Kolkata','Asia/Colombo','Asia/Dhaka',
+    'Asia/Kathmandu','Asia/Yangon',
+    'Asia/Bangkok','Asia/Ho_Chi_Minh','Asia/Jakarta',
+    'Asia/Singapore','Asia/Kuala_Lumpur','Asia/Manila','Asia/Taipei',
+    'Asia/Shanghai','Asia/Hong_Kong',
+    'Asia/Seoul','Asia/Tokyo','Asia/Vladivostok','Asia/Kamchatka',
+    /* Pacific / Oceania */
+    'Australia/Perth','Australia/Darwin','Australia/Adelaide',
+    'Australia/Brisbane','Australia/Sydney','Australia/Melbourne',
+    'Australia/Hobart','Pacific/Auckland','Pacific/Fiji','Pacific/Guam',
+    /* Fixed offsets */
+    'Etc/GMT+12','Etc/GMT+11','Etc/GMT+10','Etc/GMT+9','Etc/GMT+8',
+    'Etc/GMT+7','Etc/GMT+6','Etc/GMT+5','Etc/GMT+4','Etc/GMT+3',
+    'Etc/GMT+2','Etc/GMT+1',
+    'Etc/GMT-1','Etc/GMT-2','Etc/GMT-3','Etc/GMT-4','Etc/GMT-5',
+    'Etc/GMT-6','Etc/GMT-7','Etc/GMT-8','Etc/GMT-9','Etc/GMT-10',
+    'Etc/GMT-11','Etc/GMT-12','Etc/GMT-13','Etc/GMT-14'
+  ];
+
+  /* Build ordered, deduplicated list: UTC first, then configured, then rest */
+  var seen = {};
+  var ordered = [];
+  ['UTC'].concat(CONFIGURED_TZ).concat(ALL_TZ).forEach(function (tz) {
+    if (!seen[tz]) { seen[tz] = true; ordered.push(tz); }
+  });
+
+  /* Get current UTC offset label for a timezone at a given moment */
+  function offsetLabel(tz) {
+    try {
+      var s = new Intl.DateTimeFormat('en', {
+        timeZone: tz, timeZoneName: 'shortOffset'
+      }).formatToParts(new Date()).find(function (p) { return p.type === 'timeZoneName'; });
+      return s ? s.value : '';
+    } catch (e) { return ''; }
+  }
+
+  /* Build <select> options */
+  var sel = document.getElementById('dt_tz_select');
+  if (!sel) return;
+
+  var configSet = {};
+  CONFIGURED_TZ.forEach(function (t) { configSet[t] = true; });
+
+  /* Group 1: Configured (or just UTC if configured is empty) */
+  var grp1 = document.createElement('optgroup');
+  grp1.label = 'My Timezones';
+  var grp1Tzs = CONFIGURED_TZ.length ? ['UTC'].concat(CONFIGURED_TZ.filter(function(t){return t!=='UTC';})) : ['UTC'];
+  grp1Tzs.forEach(function (tz) {
+    var o = new Option(offsetLabel(tz) + '  ' + tz, tz);
+    if (tz === 'UTC') o.selected = true;
+    grp1.appendChild(o);
+  });
+  sel.appendChild(grp1);
+
+  /* Group 2: All other timezones */
+  var grp2 = document.createElement('optgroup');
+  grp2.label = 'All Timezones';
+  ordered.forEach(function (tz) {
+    if (grp1Tzs.indexOf(tz) !== -1) return; /* already in group 1 */
+    grp2.appendChild(new Option(offsetLabel(tz) + '  ' + tz, tz));
+  });
+  sel.appendChild(grp2);
+
+  /* Convert a local datetime string (YYYY-MM-DDTHH:MM or YYYY-MM-DDTHH:MM:SS)
+     from the given IANA timezone to a UTC string YYYY-MM-DDTHH:MM:SS */
+  function localToUTC(localStr, tz) {
+    if (!localStr) return '';
+    var norm = localStr.length === 16 ? localStr + ':00' : localStr.substring(0, 19);
+    if (tz === 'UTC') return norm;
+    /* Treat the entered value as UTC momentarily, then measure the TZ offset */
+    var asUTC = new Date(norm + 'Z');
+    if (isNaN(asUTC)) return '';
+    /* Format that instant in the target TZ to get local parts */
+    var parts = {};
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    }).formatToParts(asUTC).forEach(function (p) { parts[p.type] = p.value; });
+    var tzLocal = parts.year + '-' + parts.month + '-' + parts.day +
+                  'T' + parts.hour + ':' + parts.minute + ':' + parts.second + 'Z';
+    /* Offset = difference between what we entered (as UTC) and what the TZ shows */
+    var diff = asUTC.getTime() - new Date(tzLocal).getTime();
+    var utcDate = new Date(asUTC.getTime() + diff);
+    if (isNaN(utcDate)) return '';
+    return utcDate.toISOString().substring(0, 19);
+  }
+
+  function update() {
+    var localStr = document.getElementById('dt_local_display').value;
+    var tz = sel.value;
+    var utcVal = localToUTC(localStr, tz);
+    document.getElementById('dt_utc_hidden').value = utcVal;
+    var preview = document.getElementById('dt_utc_preview');
+    if (utcVal && tz !== 'UTC') {
+      preview.textContent = '\u2192 UTC: ' + utcVal + 'Z';
+    } else {
+      preview.textContent = '';
+    }
+  }
+
+  document.getElementById('dt_local_display').addEventListener('change', update);
+  document.getElementById('dt_local_display').addEventListener('input', update);
+  sel.addEventListener('change', update);
+  update();
+})();
+
+/* ── Searchable select ────────────────────────────────────────────────────── */
+function makeSearchableSelect(selectEl, placeholder) {
+  var selectId = selectEl.id;
+  var options = Array.from(selectEl.options).map(function(o) {
+    return { value: o.value, label: o.text.trim() };
+  });
+
+  var lbl = document.querySelector('label[for="' + selectId + '"]');
+  var inputId = selectId + '_search';
+  if (lbl) lbl.setAttribute('for', inputId);
+
+  var wrapper = document.createElement('div');
+  wrapper.className = 'position-relative';
+  selectEl.parentNode.insertBefore(wrapper, selectEl);
+  wrapper.appendChild(selectEl);
+  selectEl.style.display = 'none';
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.id = inputId;
+  input.className = 'form-control bg-dark border-secondary text-light';
+  input.placeholder = placeholder || 'Search\u2026';
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+
+  var dropdown = document.createElement('div');
+  dropdown.className = 'border border-secondary rounded bg-dark position-absolute w-100';
+  dropdown.style.cssText = 'z-index:1055;max-height:220px;overflow-y:auto;display:none;top:calc(100% + 2px);left:0;';
+
+  wrapper.insertBefore(input, selectEl);
+  wrapper.appendChild(dropdown);
+
+  var cur = options.find(function(o) { return o.value === selectEl.value; });
+  if (cur && cur.value) input.value = cur.label;
+
+  function renderOptions(q) {
+    var lower = q.toLowerCase();
+    var matches = q ? options.filter(function(o) { return o.label.toLowerCase().includes(lower); }) : options;
+    dropdown.innerHTML = '';
+    if (!matches.length) {
+      var msg = document.createElement('div');
+      msg.className = 'px-3 py-2 text-secondary small';
+      msg.textContent = 'No matches';
+      dropdown.appendChild(msg);
+      return;
+    }
+    matches.forEach(function(o) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-link d-block w-100 text-start text-light text-decoration-none px-3 py-1 small rounded-0';
+      btn.textContent = o.label;
+      btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        selectEl.value = o.value;
+        input.value = o.value ? o.label : '';
+        dropdown.style.display = 'none';
+        input.focus();
+      });
+      dropdown.appendChild(btn);
+    });
+  }
+
+  input.addEventListener('focus', function() { renderOptions(''); dropdown.style.display = 'block'; });
+  input.addEventListener('input', function() {
+    if (!this.value) selectEl.value = '';
+    renderOptions(this.value);
+    dropdown.style.display = 'block';
+  });
+  input.addEventListener('blur', function() {
+    setTimeout(function() { dropdown.style.display = 'none'; }, 200);
+  });
+  input.addEventListener('keydown', function(e) {
+    var items = Array.from(dropdown.querySelectorAll('button'));
+    if (e.key === 'Escape') { dropdown.style.display = 'none'; }
+    else if (e.key === 'ArrowDown' && items.length) { e.preventDefault(); items[0].focus(); }
+  });
+  dropdown.addEventListener('keydown', function(e) {
+    var items = Array.from(dropdown.querySelectorAll('button'));
+    var idx = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (idx < items.length - 1) items[idx + 1].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) items[idx - 1].focus(); else input.focus(); }
+    else if (e.key === 'Escape') { dropdown.style.display = 'none'; input.focus(); }
+    else if (e.key === 'Enter' && idx >= 0) { e.preventDefault(); items[idx].dispatchEvent(new MouseEvent('mousedown')); }
+  });
+
+  return function refreshOptions(newOptions) {
+    options.length = 0;
+    newOptions.forEach(function(o) { options.push(o); });
+    while (selectEl.options.length) selectEl.remove(0);
+    newOptions.forEach(function(o) { selectEl.add(new Option(o.label, o.value)); });
+    var cur = options.find(function(o) { return o.value === selectEl.value; });
+    if (!cur) { selectEl.value = ''; input.value = ''; }
+  };
+}
+
+(function() {
+  var iocSel  = document.getElementById('ioc_id');
+  var taskSel = document.getElementById('linked_task_id');
+  var refreshIoc  = iocSel  ? makeSearchableSelect(iocSel,  'Search IOCs\u2026')   : null;
+  var refreshTask = taskSel ? makeSearchableSelect(taskSel, 'Search tasks\u2026') : null;
+
+  function spinBtn(btn, spinning) {
+    btn.disabled = spinning;
+    btn.querySelector('i').className = spinning
+      ? 'bi bi-arrow-repeat' : 'bi bi-arrow-repeat';
+    btn.style.opacity = spinning ? '0.5' : '';
+  }
+
+  var refreshIocBtn  = document.getElementById('refresh-ioc-btn');
+  var refreshTaskBtn = document.getElementById('refresh-task-btn');
+
+  if (refreshIocBtn && refreshIoc) {
+    refreshIocBtn.addEventListener('click', function() {
+      spinBtn(refreshIocBtn, true);
+      fetch('/api/iocs')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var opts = [{ value: '', label: '\u2014 none \u2014' }].concat(
+            data.map(function(ioc) {
+              return { value: String(ioc.id), label: 'IOC #' + ioc.id + ' \u2014 ' + ioc.primary_indicator };
+            })
+          );
+          refreshIoc(opts);
+        })
+        .finally(function() { spinBtn(refreshIocBtn, false); });
+    });
+  }
+
+  if (refreshTaskBtn && refreshTask) {
+    refreshTaskBtn.addEventListener('click', function() {
+      spinBtn(refreshTaskBtn, true);
+      fetch('/api/tasks')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var opts = [{ value: '', label: '\u2014 none \u2014' }].concat(
+            data.map(function(t) {
+              var title = t.title.length > 60 ? t.title.substring(0, 60) : t.title;
+              return { value: String(t.id), label: '#' + t.id + ' \u2014 ' + title + ' [' + t.status + ']' };
+            })
+          );
+          refreshTask(opts);
+        })
+        .finally(function() { spinBtn(refreshTaskBtn, false); });
+    });
+  }
+})();
+
+/* ── IOC tag autocomplete ─────────────────────────────────────────────────── */
 const eventTagsInput = document.getElementById('event-tags-input');
 if (eventTagsInput) {
   fetchIocTags();

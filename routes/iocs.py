@@ -9,6 +9,7 @@ from models import ioc as ioc_model
 from models import event as event_model
 from utils import stix_parser
 from utils.csv_io import make_csv_response, make_template_csv, parse_csv_upload
+from utils.pagination import get_page_args, paginate
 
 iocs_bp = Blueprint("iocs", __name__, url_prefix="/iocs")
 
@@ -77,16 +78,19 @@ def index():
     search = request.args.get("q", "").strip()
     category_filter = request.args.get("category", "").strip()
     tag_filter = request.args.get("tag", "").strip()
-    iocs = ioc_model.get_all(
+    page, per_page = get_page_args(request)
+    all_iocs = ioc_model.get_all(
         search=search or None,
         category_filter=category_filter or None,
         tag_filter=tag_filter or None,
     )
+    pag = paginate(all_iocs, page, per_page)
     all_categories = ioc_model.get_distinct_categories()
     all_tags = ioc_model.get_all_tags_with_counts()
     return render_template(
         "ioc_index.html",
-        iocs=iocs,
+        iocs=pag["items"],
+        pagination=pag,
         all_categories=all_categories,
         all_tags=all_tags,
         search=search,

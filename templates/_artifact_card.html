@@ -26,7 +26,7 @@
       {% endif %}
     </div>
     <div class="card-footer text-secondary small border-secondary">
-      <i class="bi bi-clock me-1"></i>{{ artifact.updated_at[:10] }}
+      <i class="bi bi-clock me-1"></i><span data-utc="{{ artifact.updated_at }}">{{ artifact.updated_at[:10] }}</span>
       &nbsp;·&nbsp;
       <i class="bi bi-person me-1"></i>{{ artifact.updated_by }}
     </div>

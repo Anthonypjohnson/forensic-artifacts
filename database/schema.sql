@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_active       INTEGER NOT NULL DEFAULT 1,
     failed_attempts INTEGER NOT NULL DEFAULT 0,
     locked_until    TEXT,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now','utc')),
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     last_login      TEXT
 );
 
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS artifacts (
     tools        TEXT NOT NULL,
     instructions TEXT NOT NULL,
     significance TEXT NOT NULL,
-    created_at   TEXT NOT NULL DEFAULT (datetime('now','utc')),
-    updated_at   TEXT NOT NULL DEFAULT (datetime('now','utc')),
+    created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     created_by   TEXT NOT NULL,
     updated_by   TEXT NOT NULL
 );
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS edit_history (
     artifact_id    INTEGER NOT NULL REFERENCES artifacts(id) ON DELETE CASCADE,
     editor_name    TEXT NOT NULL,
     change_summary TEXT NOT NULL,
-    changed_at     TEXT NOT NULL DEFAULT (datetime('now','utc')),
+    changed_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     snapshot_json  TEXT NOT NULL
 );
 
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS iocs (
     detection_rule   TEXT NOT NULL DEFAULT '',
     network_port     TEXT NOT NULL DEFAULT '',
     network_protocol TEXT NOT NULL DEFAULT '',
-    created_at       TEXT NOT NULL DEFAULT (datetime('now','utc')),
-    updated_at       TEXT NOT NULL DEFAULT (datetime('now','utc')),
+    created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    updated_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     created_by       TEXT NOT NULL,
     updated_by       TEXT NOT NULL
 );
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS ioc_tag_assignments (
 CREATE TABLE IF NOT EXISTS ioc_edit_history (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     ioc_id         INTEGER NOT NULL REFERENCES iocs(id) ON DELETE CASCADE,
-    edited_at      TEXT NOT NULL DEFAULT (datetime('now','utc')),
+    edited_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     editor_name    TEXT NOT NULL,
     change_summary TEXT NOT NULL,
     ioc_snapshot   TEXT NOT NULL
@@ -155,6 +155,16 @@ CREATE TABLE IF NOT EXISTS tasks (
     updated_by  TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+
+CREATE TABLE IF NOT EXISTS task_edit_history (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id        INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    editor_name    TEXT NOT NULL,
+    change_summary TEXT NOT NULL,
+    edited_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    snapshot_json  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_task_history_task_id ON task_edit_history(task_id);
 
 -- Global application settings (key/value)
 CREATE TABLE IF NOT EXISTS app_settings (

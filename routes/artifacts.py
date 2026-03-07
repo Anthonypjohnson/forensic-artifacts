@@ -9,6 +9,7 @@ from models import artifact as artifact_model
 from models import history as history_model
 from models import tag as tag_model
 from utils.csv_io import make_csv_response, make_template_csv, parse_csv_upload
+from utils.pagination import get_page_args, paginate
 
 artifacts_bp = Blueprint("artifacts", __name__)
 
@@ -38,14 +39,17 @@ def _sanitize_artifact_fields(form):
 def index():
     search = request.args.get("q", "").strip()
     tag_filter = request.args.get("tag", "").strip()
-    artifacts = artifact_model.get_all(
+    page, per_page = get_page_args(request)
+    all_artifacts = artifact_model.get_all(
         search=search or None,
         tag_filter=tag_filter or None,
     )
+    pag = paginate(all_artifacts, page, per_page)
     all_tags = tag_model.get_all_with_counts()
     return render_template(
         "index.html",
-        artifacts=artifacts,
+        artifacts=pag["items"],
+        pagination=pag,
         all_tags=all_tags,
         search=search,
         tag_filter=tag_filter,

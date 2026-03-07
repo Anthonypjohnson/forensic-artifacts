@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pagination.html" import render as pagination_widget %}
 {% block title %}Tasks — ForensicArtifacts{% endblock %}
 
 {% block content %}
@@ -58,7 +59,13 @@
   {% endfor %}
 </div>
 
-{% if tasks %}
+{{ pagination_widget(pagination, 'tasks.index', {
+     'q': search or None,
+     'status': status_filter or None,
+     'assignee': assignee_filter or None,
+     'priority': priority_filter or None
+   }) }}
+{% if tasks or pagination.total > 0 %}
 <div class="list-group">
   {% for task in tasks %}
   {% set priority_colors = {'Low': 'secondary', 'Medium': 'info', 'High': 'warning', 'Critical': 'danger'} %}
@@ -80,8 +87,8 @@
       <span class="text-secondary small text-nowrap">
         <i class="bi bi-calendar-event me-1"></i>{{ task.event_count }} event{{ 's' if task.event_count != 1 else '' }}
       </span>
-      <span class="text-secondary small text-nowrap">
-        {{ task.updated_at[:10] }}
+      <span class="font-monospace text-info small text-nowrap" data-utc="{{ task.updated_at }}">
+        <i class="bi bi-clock me-1"></i>{{ task.updated_at[:19] }}Z
       </span>
     </div>
     {% if task.description %}
@@ -92,6 +99,12 @@
   </a>
   {% endfor %}
 </div>
+{{ pagination_widget(pagination, 'tasks.index', {
+     'q': search or None,
+     'status': status_filter or None,
+     'assignee': assignee_filter or None,
+     'priority': priority_filter or None
+   }) }}
 {% else %}
 <div class="text-center text-secondary py-5">
   <i class="bi bi-check2-square fs-1 d-block mb-2"></i>

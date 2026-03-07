@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pagination.html" import render as pagination_widget %}
 {% block title %}IOCs — ForensicArtifacts{% endblock %}
 
 {% block content %}
@@ -87,6 +88,7 @@
 </div>
 {% endif %}
 
+{{ pagination_widget(pagination, 'iocs.index', {'q': search or None, 'category': category_filter or None, 'tag': tag_filter or None}) }}
 {# Results #}
 <div id="ioc-grid" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
   {% for ioc in iocs %}
@@ -106,4 +108,5 @@
   </div>
   {% endfor %}
 </div>
+{{ pagination_widget(pagination, 'iocs.index', {'q': search or None, 'category': category_filter or None, 'tag': tag_filter or None}) }}
 {% endblock %}

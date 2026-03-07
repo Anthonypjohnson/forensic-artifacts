@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pagination.html" import render as pagination_widget %}
 {% block title %}Artifacts — ForensicArtifacts{% endblock %}
 
 {% block content %}
@@ -60,6 +61,7 @@
 </div>
 {% endif %}
 
+{{ pagination_widget(pagination, 'artifacts.index', {'q': search or None, 'tag': tag_filter or None}) }}
 {# Results #}
 <div id="artifact-grid" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
   {% for artifact in artifacts %}
@@ -79,4 +81,5 @@
   </div>
   {% endfor %}
 </div>
+{{ pagination_widget(pagination, 'artifacts.index', {'q': search or None, 'tag': tag_filter or None}) }}
 {% endblock %}

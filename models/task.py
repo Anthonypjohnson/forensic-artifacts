@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from database.db import get_db
 from models.event import get_tags_for_event
@@ -6,7 +7,7 @@ TASK_FIELDS = ['title', 'status', 'priority', 'assignee', 'description', 'notes'
 
 
 def _now():
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _row_to_dict(row):
@@ -163,6 +164,18 @@ def get_events_for_task(task_id):
         event["tags"] = get_tags_for_event(event["id"])
         events.append(event)
     return events
+
+
+def insert_history(task_id, editor_name, change_summary, snapshot_dict):
+    db = get_db()
+    db.execute(
+        """
+        INSERT INTO task_edit_history (task_id, editor_name, change_summary, snapshot_json)
+        VALUES (?, ?, ?, ?)
+        """,
+        (task_id, editor_name, change_summary, json.dumps(snapshot_dict)),
+    )
+    db.commit()
 
 
 def get_all_tasks_brief():

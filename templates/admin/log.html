@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pagination.html" import render as pagination_widget %}
 {% block title %}Activity Log — ForensicArtifacts{% endblock %}
 
 {% block content %}
@@ -24,9 +25,11 @@
     <label class="form-label text-secondary small mb-1">Type</label>
     <select name="kind" class="form-select form-select-sm bg-dark text-light border-secondary"
             style="min-width: 130px;">
-      <option value=""     {% if not kind %}selected{% endif %}>All</option>
+      <option value=""         {% if not kind %}selected{% endif %}>All</option>
       <option value="artifact" {% if kind == 'artifact' %}selected{% endif %}>Artifact</option>
       <option value="ioc"      {% if kind == 'ioc' %}selected{% endif %}>IOC</option>
+      <option value="event"    {% if kind == 'event' %}selected{% endif %}>Event</option>
+      <option value="task"     {% if kind == 'task' %}selected{% endif %}>Task</option>
     </select>
   </div>
   <div class="col-auto">
@@ -44,6 +47,7 @@
 </form>
 
 {% if entries %}
+{{ pagination_widget(pagination, 'admin.activity_log', {'editor': editor or None, 'kind': kind or None}) }}
 <div class="table-responsive">
   <table class="table table-dark table-hover table-sm align-middle border-secondary">
     <thead class="text-secondary small">
@@ -65,17 +69,27 @@
         <td>
           {% if e.kind == 'artifact' %}
           <span class="badge bg-success">Artifact</span>
-          {% else %}
+          {% elif e.kind == 'ioc' %}
           <span class="badge bg-warning text-dark">IOC</span>
+          {% elif e.kind == 'event' %}
+          <span class="badge bg-info text-dark">Event</span>
+          {% else %}
+          <span class="badge bg-primary">Task</span>
           {% endif %}
         </td>
         <td>
           {% if e.kind == 'artifact' %}
           <a href="{{ url_for('artifacts.detail', artifact_id=e.subject_id) }}"
              class="text-light text-decoration-none">{{ e.subject_label }}</a>
-          {% else %}
+          {% elif e.kind == 'ioc' %}
           <a href="{{ url_for('iocs.detail', ioc_id=e.subject_id) }}"
              class="text-light text-decoration-none font-monospace">{{ e.subject_label }}</a>
+          {% elif e.kind == 'event' %}
+          <a href="{{ url_for('events.detail', event_id=e.subject_id) }}"
+             class="text-light text-decoration-none">{{ e.subject_label }}</a>
+          {% else %}
+          <a href="{{ url_for('tasks.detail', task_id=e.subject_id) }}"
+             class="text-light text-decoration-none">{{ e.subject_label }}</a>
           {% endif %}
         </td>
         <td>
@@ -93,7 +107,7 @@
     </tbody>
   </table>
 </div>
-<p class="text-secondary small">Showing {{ entries|length }} entr{{ 'y' if entries|length == 1 else 'ies' }}.</p>
+{{ pagination_widget(pagination, 'admin.activity_log', {'editor': editor or None, 'kind': kind or None}) }}
 {% else %}
 <div class="text-center py-5 text-secondary">
   <i class="bi bi-journal-x fs-1 d-block mb-2"></i>

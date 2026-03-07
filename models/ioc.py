@@ -107,7 +107,7 @@ def get_distinct_categories():
 
 def create(fields_dict, created_by, tag_names):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     cur = db.execute(
         """
         INSERT INTO iocs
@@ -150,7 +150,7 @@ def create(fields_dict, created_by, tag_names):
 
 def update(ioc_id, fields_dict, updated_by, tag_names):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     db.execute(
         """
         UPDATE iocs

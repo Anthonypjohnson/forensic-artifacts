@@ -11,6 +11,7 @@ from forms.event_form import EventForm
 from models import event as event_model
 from models import task as task_model
 from utils.csv_io import make_csv_response, make_template_csv, parse_csv_upload
+from utils.pagination import get_page_args, paginate
 
 events_bp = Blueprint("events", __name__, url_prefix="/events")
 
@@ -106,8 +107,9 @@ def index():
     account_filter = request.args.get("account", "").strip()
     tag_filter = request.args.get("tag", "").strip()
     source_filter = request.args.get("source", "").strip()
+    page, per_page = get_page_args(request)
 
-    events = event_model.get_all(
+    all_events = event_model.get_all(
         search=search or None,
         ioc_filter=int(ioc_filter) if ioc_filter.isdigit() else None,
         system_filter=system_filter or None,
@@ -115,11 +117,13 @@ def index():
         source_filter=source_filter or None,
         tag_filter=tag_filter or None,
     )
+    pag = paginate(all_events, page, per_page)
     all_iocs = event_model.get_all_iocs_brief()
     all_tags = event_model.get_all_event_tags_with_counts()
     return render_template(
         "event_index.html",
-        events=events,
+        events=pag["items"],
+        pagination=pag,
         all_iocs=all_iocs,
         all_tags=all_tags,
         search=search,

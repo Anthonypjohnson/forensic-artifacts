@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 from forms.task_form import TaskForm
 from models import task as task_model
 from utils.csv_io import make_csv_response, make_template_csv, parse_csv_upload
+from utils.pagination import get_page_args, paginate
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 
@@ -35,16 +36,19 @@ def index():
     status_filter = request.args.get("status", "").strip()
     assignee_filter = request.args.get("assignee", "").strip()
     priority_filter = request.args.get("priority", "").strip()
+    page, per_page = get_page_args(request)
 
-    tasks = task_model.get_all(
+    all_tasks = task_model.get_all(
         search=search or None,
         status_filter=status_filter or None,
         assignee_filter=assignee_filter or None,
         priority_filter=priority_filter or None,
     )
+    pag = paginate(all_tasks, page, per_page)
     return render_template(
         "task_index.html",
-        tasks=tasks,
+        tasks=pag["items"],
+        pagination=pag,
         search=search,
         status_filter=status_filter,
         assignee_filter=assignee_filter,
@@ -59,6 +63,7 @@ def new_task():
     if form.validate_on_submit():
         fields = _sanitize_form(form)
         task_id = task_model.create(fields, created_by=current_user.username)
+        task_model.insert_history(task_id, current_user.username, "created", {})
         flash("Task created.", "success")
         return redirect(url_for("tasks.detail", task_id=task_id))
     return render_template("task_form.html", form=form, title="New Task", task=None)
@@ -83,7 +88,9 @@ def edit_task(task_id):
     form = TaskForm()
     if form.validate_on_submit():
         fields = _sanitize_form(form)
+        snapshot = {k: task.get(k) for k in task_model.TASK_FIELDS}
         task_model.update(task_id, fields, updated_by=current_user.username)
+        task_model.insert_history(task_id, current_user.username, "edited", snapshot)
         flash("Task updated.", "success")
         return redirect(url_for("tasks.detail", task_id=task_id))
 
@@ -231,7 +238,8 @@ def import_csv_confirm():
             "description": _sanitize(row.get("description", "")),
             "notes": _sanitize(row.get("notes", "")),
         }
-        task_model.create(fields, created_by=editor)
+        task_id = task_model.create(fields, created_by=editor)
+        task_model.insert_history(task_id, editor, "created", {})
         count += 1
     flash(f"Imported {count} task(s).", "success" if count else "warning")
     return redirect(url_for("tasks.index"))

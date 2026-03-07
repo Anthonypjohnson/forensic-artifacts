@@ -6,6 +6,7 @@ from argon2 import PasswordHasher
 from forms.auth_form import CreateUserForm
 from models import user as user_model
 from models import log as log_model
+from utils.pagination import get_page_args, paginate
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
@@ -72,12 +73,15 @@ def enable_user(user_id):
 def activity_log():
     editor = request.args.get("editor", "").strip() or None
     kind = request.args.get("kind", "").strip() or None
-    if kind not in (None, "artifact", "ioc"):
+    if kind not in (None, "artifact", "ioc", "event", "task"):
         kind = None
-    entries = log_model.get_activity_log(limit=500, editor=editor, kind=kind)
+    page, per_page = get_page_args(request)
+    all_entries = log_model.get_activity_log(limit=10000, editor=editor, kind=kind)
+    pag = paginate(all_entries, page, per_page)
     return render_template(
         "admin/log.html",
-        entries=entries,
+        entries=pag["items"],
+        pagination=pag,
         editor=editor or "",
         kind=kind or "",
     )

@@ -3,9 +3,12 @@
   <div class="d-flex align-items-center gap-3 flex-wrap">
 
     {# Datetime column #}
-    <span class="font-monospace text-info small text-nowrap" style="min-width:11rem;">
+    <span class="font-monospace text-info small text-nowrap" style="min-width:11rem;"
+          {% if event.event_datetime %}data-utc="{{ event.event_datetime }}"{% endif %}>
       {% if event.event_datetime %}
-        <i class="bi bi-clock me-1"></i><span data-utc="{{ event.event_datetime }}">{{ event.event_datetime[:19] }}Z</span>
+        {% set _dt = event.event_datetime[:19] %}
+        {% set _dt = _dt if _dt|length >= 19 else _dt + ':00' %}
+        <i class="bi bi-clock me-1"></i>{{ _dt }}Z
       {% else %}
         <span class="text-secondary fst-italic">no date</span>
       {% endif %}

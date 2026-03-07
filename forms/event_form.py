@@ -14,7 +14,7 @@ class EventForm(FlaskForm):
     event_category    = SelectField('MITRE Tactic / Category', choices=MITRE_TACTICS)
     system            = StringField('Hostname / System', validators=[Length(max=512)])
     account           = StringField('Account / Username', validators=[Length(max=256)])
-    event_datetime    = StringField('Event Date/Time (UTC)', validators=[Length(max=32)])
+    event_datetime    = StringField('Event Date/Time', validators=[Length(max=32)])
     high_level_source = StringField('High-Level Source (e.g. SIEM, EDR)', validators=[Length(max=256)])
     detailed_source   = TextAreaField('Detailed Source (log path / query / rule)', validators=[Length(max=2048)])
     notes             = TextAreaField('Notes', validators=[Length(max=4096)])

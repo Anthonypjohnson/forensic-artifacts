@@ -161,7 +161,7 @@ def get_all_event_tags_with_counts():
 
 def create(fields_dict, created_by, tag_names):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     ioc_id = fields_dict.get('ioc_id') or None
     linked_task_id = fields_dict.get('linked_task_id') or None
     cur = db.execute(
@@ -197,7 +197,7 @@ def create(fields_dict, created_by, tag_names):
 
 def update(event_id, fields_dict, updated_by, tag_names):
     db = get_db()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     ioc_id = fields_dict.get('ioc_id') or None
     linked_task_id = fields_dict.get('linked_task_id') or None
     db.execute(

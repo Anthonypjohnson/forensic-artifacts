@@ -4,14 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Forensic Artifacts{% endblock %}</title>
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-        crossorigin="anonymous">
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-        integrity="sha384-tViUnnbplMdV9lBgyli0R8bKOHYHXZ6OZD2Pbg1kF4qLiTc4bshk11m0SQZKX6q"
-        crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/css/bootstrap-icons.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
 <body>
@@ -100,31 +94,6 @@
             <i class="bi bi-box-arrow-right me-1"></i>Logout
           </a>
         </li>
-        {% if request.blueprint == 'iocs' %}
-        <li class="nav-item">
-          <a class="btn btn-warning btn-sm text-dark" href="{{ url_for('iocs.new_ioc') }}">
-            <i class="bi bi-plus-lg me-1"></i>New IOC
-          </a>
-        </li>
-        {% elif request.blueprint == 'events' %}
-        <li class="nav-item">
-          <a class="btn btn-info btn-sm text-dark" href="{{ url_for('events.new_event') }}">
-            <i class="bi bi-plus-lg me-1"></i>New Event
-          </a>
-        </li>
-        {% elif request.blueprint == 'tasks' %}
-        <li class="nav-item">
-          <a class="btn btn-primary btn-sm" href="{{ url_for('tasks.new_task') }}">
-            <i class="bi bi-plus-lg me-1"></i>New Task
-          </a>
-        </li>
-        {% else %}
-        <li class="nav-item">
-          <a class="btn btn-success btn-sm" href="{{ url_for('artifacts.new_artifact') }}">
-            <i class="bi bi-plus-lg me-1"></i>New Artifact
-          </a>
-        </li>
-        {% endif %}
         {% endif %}
       </ul>
     </div>
@@ -148,9 +117,7 @@
   {% block content %}{% endblock %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmA3LB2yxpECiMDMV4k2M1u3Mjo"
-        crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 {% block extra_js %}{% endblock %}
 
@@ -206,8 +173,10 @@
   _tick();
   setInterval(_tick, 1000);
 
-  /* ── timestamp tooltips ── */
-  function _initTooltips() {
+  /* ── timestamp popovers (click to expand) ── */
+  function _initPopovers() {
+    var _allPopovers = [];
+
     document.querySelectorAll('[data-utc]').forEach(function (el) {
       var raw = el.getAttribute('data-utc');
       if (!raw) return;
@@ -215,25 +184,57 @@
       var date = new Date(iso);
       if (isNaN(date.getTime())) return;
 
-      var html = _TZ.map(function (tz) {
-        return '<span style="white-space:nowrap"><b>' + tz + '</b>: ' + _fmtTooltip(date, tz) + '</span>';
-      }).join('<br>');
+      // Build popover content: one row per configured TZ
+      var content = _TZ.map(function (tz) {
+        return '<div style="white-space:nowrap;font-family:monospace">' +
+               '<span style="color:#6c757d;display:inline-block;min-width:7rem">' +
+               tz.split('/').pop().replace(/_/g, '\u00a0') + '</span>' +
+               _fmtTooltip(date, tz) +
+               '</div>';
+      }).join('');
 
-      el.setAttribute('data-bs-toggle', 'tooltip');
-      el.setAttribute('data-bs-placement', 'top');
-      el.setAttribute('data-bs-html', 'true');
-      el.setAttribute('title', html);
-      el.style.cursor = 'help';
+      el.style.cursor = 'pointer';
       el.style.borderBottom = '1px dotted rgba(255,255,255,0.35)';
-      new bootstrap.Tooltip(el, { trigger: 'hover focus', html: true });
+
+      var pop = new bootstrap.Popover(el, {
+        trigger: 'manual',
+        html: true,
+        sanitize: false,
+        container: 'body',
+        placement: 'top',
+        title: '<i class="bi bi-clock me-1"></i>Timezones',
+        content: content
+      });
+
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        var isVisible = el.getAttribute('aria-describedby');
+        // Close all others first
+        _allPopovers.forEach(function (p) {
+          if (p._element !== el) p.hide();
+        });
+        if (isVisible) {
+          pop.hide();
+        } else {
+          pop.show();
+        }
+      });
+
+      _allPopovers.push(pop);
+    });
+
+    // Click outside → close all
+    document.addEventListener('click', function () {
+      _allPopovers.forEach(function (p) { p.hide(); });
     });
   }
 
   /* Run after page settles so dynamically-added elements are in DOM */
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _initTooltips);
+    document.addEventListener('DOMContentLoaded', _initPopovers);
   } else {
-    _initTooltips();
+    _initPopovers();
   }
 })();
 </script>

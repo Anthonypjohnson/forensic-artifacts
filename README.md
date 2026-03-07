@@ -12,11 +12,14 @@ A self-hosted knowledge base for forensic artifacts and indicators of compromise
 - **Tagging** — tag artifacts, IOCs, and events independently; filter by tag on index pages
 - **Edit history** — every create and edit is snapshotted; diff view shows exactly what changed
 - **Activity log** — admin-only unified log of all artifact and IOC changes across the site
-- **CSV import/export** — import and export IOCs, events, and tasks as CSV; downloadable template included
+- **CSV import/export** — import and export IOCs, events, and tasks as CSV; downloadable template included; timeline export includes linked IOC and task fields
+- **Pagination** — all index pages (Artifacts, IOCs, Events, Tasks, Activity Log) support 25/50/100/500 items per page with page navigation at the top and bottom of each list
+- **Timezone popovers** — click any timestamp on the Events or Tasks index to see it converted across all configured timezones without navigating away
 - **Settings** — configure the UTC clock bar with up to 20 IANA timezones
+- **Offline / air-gapped operation** — Bootstrap CSS, JS, and Icons are vendored under `static/vendor/`; no CDN requests at runtime
 - **IP whitelist** — non-whitelisted IPs are silently dropped before reaching the app
 - **Account lockout** — 5 failed logins triggers a 15-minute lockout
-- **Security headers** — CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy on every response
+- **Security headers** — CSP (`self`-only), X-Frame-Options, X-Content-Type-Options, and Referrer-Policy on every response
 - **HTTPS** — nginx terminates TLS; auto-generates a self-signed cert or uses a CA-provided cert (e.g. Windows PKI)
 
 ## Stack
@@ -207,10 +210,12 @@ Drop `cert.pem` and `key.pem` into `./certs/` — nginx picks them up on next st
 │   ├── tasks.py            # /tasks — task tracking
 │   └── timeline.py         # /timeline — chronological event view
 ├── static/
-│   └── uploads/
-│       └── events/         # Uploaded event screenshots
+│   ├── uploads/
+│   │   └── events/         # Uploaded event screenshots
+│   └── vendor/             # Vendored Bootstrap CSS/JS and Bootstrap Icons (offline use)
 └── utils/
     ├── csv_io.py           # CSV export/import helpers
+    ├── pagination.py       # Server-side pagination helper
     └── stix_parser.py      # STIX 1.x XML and STIX 2.x JSON parser
 ```
 

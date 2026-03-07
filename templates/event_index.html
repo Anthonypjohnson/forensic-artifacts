@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_pagination.html" import render as pagination_widget %}
 {% block title %}Events — ForensicArtifacts{% endblock %}
 
 {% block content %}
@@ -94,6 +95,14 @@
 </div>
 {% endif %}
 
+{{ pagination_widget(pagination, 'events.index', {
+     'q': search or None,
+     'ioc': ioc_filter or None,
+     'system': system_filter or None,
+     'account': account_filter or None,
+     'tag': tag_filter or None,
+     'source': source_filter or None
+   }) }}
 {# Results — sorted by event_datetime DESC #}
 <div id="event-grid" class="list-group list-group-flush border border-secondary rounded">
   {% for event in events %}
@@ -111,4 +120,12 @@
   </div>
   {% endfor %}
 </div>
+{{ pagination_widget(pagination, 'events.index', {
+     'q': search or None,
+     'ioc': ioc_filter or None,
+     'system': system_filter or None,
+     'account': account_filter or None,
+     'tag': tag_filter or None,
+     'source': source_filter or None
+   }) }}
 {% endblock %}

@@ -99,3 +99,9 @@ pre {
   background: transparent;
   margin: 0;
 }
+
+/* Timezone popover — wide enough for full datetime strings */
+.popover {
+  min-width: 22rem;
+  max-width: 32rem;
+}

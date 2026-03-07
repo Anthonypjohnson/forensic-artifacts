@@ -100,7 +100,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Created at</span>
-          <span class="text-light small">{{ task.created_at[:10] }}</span>
+          <span class="font-monospace text-info small" data-utc="{{ task.created_at }}">{{ task.created_at[:19] }}Z</span>
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Updated by</span>
@@ -108,7 +108,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Updated at</span>
-          <span class="text-light small">{{ task.updated_at[:10] }}</span>
+          <span class="font-monospace text-info small" data-utc="{{ task.updated_at }}">{{ task.updated_at[:19] }}Z</span>
         </li>
       </ul>
     </div>

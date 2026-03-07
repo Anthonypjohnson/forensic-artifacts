@@ -44,9 +44,9 @@
             <span class="badge bg-success">active</span>
             {% endif %}
           </td>
-          <td class="text-secondary small">{{ user.created_at[:10] }}</td>
+          <td class="text-secondary small"><span data-utc="{{ user.created_at }}">{{ user.created_at[:10] }}</span></td>
           <td class="text-secondary small">
-            {{ user.last_login[:10] if user.last_login else '—' }}
+            {% if user.last_login %}<span data-utc="{{ user.last_login }}">{{ user.last_login[:10] }}</span>{% else %}—{% endif %}
           </td>
           <td>
             <div class="d-flex gap-1 flex-wrap">
