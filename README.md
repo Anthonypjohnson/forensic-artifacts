@@ -5,23 +5,30 @@ A self-hosted knowledge base for forensic artifacts and indicators of compromise
 ## Features
 
 - **Artifact library** — document forensic artifacts with location, tools, instructions, and significance
-- **IOC tracking** — record network, file, system, and other indicators with severity and case grouping
-- **Tagging** — tag artifacts and IOCs independently; filter by tag on index pages
+- **IOC tracking** — record network, file, system, and other indicators with severity and case grouping; import from STIX 1.x XML or STIX 2.x JSON
+- **Events** — log forensic events (authentication, execution, network activity, etc.) with system, account, source, datetime, notes, and optional screenshot attachment; link events to IOCs and tasks
+- **Tasks** — track investigation tasks with status (Open / In Progress / Blocked / Done) and priority (Low / Medium / High / Critical); claim/release assignment
+- **Timeline** — chronological view of events grouped by date, with filtering by date range, system, IOC, category, and tag
+- **Tagging** — tag artifacts, IOCs, and events independently; filter by tag on index pages
 - **Edit history** — every create and edit is snapshotted; diff view shows exactly what changed
 - **Activity log** — admin-only unified log of all artifact and IOC changes across the site
+- **CSV import/export** — import and export IOCs, events, and tasks as CSV; downloadable template included
+- **Settings** — configure the UTC clock bar with up to 20 IANA timezones
 - **IP whitelist** — non-whitelisted IPs are silently dropped before reaching the app
 - **Account lockout** — 5 failed logins triggers a 15-minute lockout
+- **Security headers** — CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy on every response
 - **HTTPS** — nginx terminates TLS; auto-generates a self-signed cert or uses a CA-provided cert (e.g. Windows PKI)
 
 ## Stack
 
 | Layer | Technology |
 |-------|------------|
-| Web framework | Flask 3.0 |
+| Web framework | Flask 3.1 |
 | Database | SQLite (WAL mode) |
 | Auth | Flask-Login + Argon2id |
 | CSRF | Flask-WTF |
 | Input sanitisation | bleach |
+| XML safety | defusedxml |
 | Frontend | Bootstrap 5.3 dark theme |
 | Reverse proxy | nginx (Docker sidecar) |
 
@@ -144,8 +151,8 @@ Drop `cert.pem` and `key.pem` into `./certs/` — nginx picks them up on next st
 |----------|---------|-------------|
 | `SECRET_KEY` | *(required)* | Flask session signing key — generate with `secrets.token_hex(32)` |
 | `FLASK_ENV` | `production` | Set to `development` to enable debug mode |
-| `SESSION_COOKIE_SECURE` | `True` | Set to `False` only if not using HTTPS |
-| `PROXY_COUNT` | `1` | Number of trusted reverse proxies (1 = nginx sidecar) |
+| `SESSION_COOKIE_SECURE` | `False` | Set to `True` when running behind HTTPS (required for production) |
+| `PROXY_COUNT` | `0` | Number of trusted reverse proxies in front of the app — set to `1` when using the nginx sidecar |
 
 ---
 
@@ -164,23 +171,39 @@ Drop `cert.pem` and `key.pem` into `./certs/` — nginx picks them up on next st
 │   ├── db.py               # SQLite connection, WAL mode, foreign keys
 │   └── schema.sql          # DDL
 ├── forms/
+│   ├── artifact_form.py
+│   ├── auth_form.py
+│   ├── event_form.py
+│   ├── ioc_form.py
+│   └── task_form.py
 ├── middleware/
 │   └── ip_whitelist.py     # WSGI silent-drop middleware
 ├── models/
 │   ├── artifact.py
+│   ├── event.py
 │   ├── history.py
 │   ├── ioc.py
 │   ├── log.py              # Unified activity log query
+│   ├── settings.py         # App settings (timezones)
 │   ├── tag.py
+│   ├── task.py
 │   └── user.py
 ├── routes/
 │   ├── admin.py            # /admin — user management, activity log
 │   ├── api.py              # /api — JSON endpoints for live search
-│   ├── artifacts.py        # /artifact
+│   ├── artifacts.py        # /artifacts
 │   ├── auth.py             # /auth — login, logout, change password
-│   └── iocs.py             # /iocs
+│   ├── events.py           # /events — event log with screenshot upload
+│   ├── iocs.py             # /iocs — IOC tracking + STIX/CSV import
+│   ├── settings.py         # /settings — timezone configuration
+│   ├── tasks.py            # /tasks — task tracking
+│   └── timeline.py         # /timeline — chronological event view
 ├── static/
-└── templates/
+│   └── uploads/
+│       └── events/         # Uploaded event screenshots
+└── utils/
+    ├── csv_io.py           # CSV export/import helpers
+    └── stix_parser.py      # STIX 1.x XML and STIX 2.x JSON parser
 ```
 
 ## Security Notes
@@ -190,4 +213,6 @@ Drop `cert.pem` and `key.pem` into `./certs/` — nginx picks them up on next st
 - Passwords are hashed with Argon2id (time_cost=3, memory_cost=64 MB, parallelism=4)
 - All POST forms are CSRF-protected via Flask-WTF
 - The `editor_name` field on all forms is locked to the logged-in user server-side and cannot be spoofed
+- STIX XML parsing uses `defusedxml` to prevent XML bomb and XXE attacks
+- Uploaded screenshots are validated by extension and MIME type; stored with UUID filenames under `static/uploads/events/`
 - TLS private keys are excluded from both git history and Docker image builds
