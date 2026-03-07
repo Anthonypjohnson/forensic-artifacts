@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Tasks — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mt-2 mb-4">
+  <h4 class="mb-0 text-light"><i class="bi bi-check2-square me-2"></i>Tasks</h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('tasks.export_csv', q=search or None, status=status_filter or None, assignee=assignee_filter or None, priority=priority_filter or None) }}"
+       class="btn btn-outline-success btn-sm">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+    <a href="{{ url_for('tasks.import_csv') }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-upload me-1"></i>Import
+    </a>
+    <a href="{{ url_for('tasks.new_task') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>New Task
+    </a>
+  </div>
+</div>
+
+{# Filters #}
+<form method="get" class="mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-4 col-md-3">
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="q" value="{{ search }}" placeholder="Search tasks…">
+    </div>
+    <div class="col-sm-3 col-md-2">
+      <select class="form-select form-select-sm bg-dark border-secondary text-light" name="priority">
+        <option value="">All Priorities</option>
+        {% for p in ['Low', 'Medium', 'High', 'Critical'] %}
+        <option value="{{ p }}" {% if priority_filter == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-3 col-md-2">
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="assignee" value="{{ assignee_filter }}" placeholder="Assignee…">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Filter</button>
+      {% if search or status_filter or assignee_filter or priority_filter %}
+      <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-danger btn-sm ms-1">Clear</a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+{# Status pill filters #}
+<div class="d-flex gap-2 flex-wrap mb-3">
+  {% for status in ['', 'Open', 'In Progress', 'Blocked', 'Done'] %}
+  {% set label = 'All' if status == '' else status %}
+  <a href="{{ url_for('tasks.index', q=search, priority=priority_filter, assignee=assignee_filter, status=status) }}"
+     class="btn btn-sm {% if status_filter == status %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if tasks %}
+<div class="list-group">
+  {% for task in tasks %}
+  {% set priority_colors = {'Low': 'secondary', 'Medium': 'info', 'High': 'warning', 'Critical': 'danger'} %}
+  {% set status_colors = {'Open': 'secondary', 'In Progress': 'primary', 'Blocked': 'warning', 'Done': 'success'} %}
+  <a href="{{ url_for('tasks.detail', task_id=task.id) }}"
+     class="list-group-item list-group-item-action bg-dark border-secondary text-decoration-none py-2 px-3">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <span class="badge bg-{{ priority_colors.get(task.priority, 'secondary') }}"
+            style="min-width:5rem;">{{ task.priority }}</span>
+      <span class="flex-grow-1 text-light fw-semibold">
+        {{ task.title }}
+      </span>
+      <span class="badge bg-{{ status_colors.get(task.status, 'secondary') }}">{{ task.status }}</span>
+      {% if task.assignee %}
+      <span class="text-secondary small text-nowrap">
+        <i class="bi bi-person me-1"></i>{{ task.assignee }}
+      </span>
+      {% endif %}
+      <span class="text-secondary small text-nowrap">
+        <i class="bi bi-calendar-event me-1"></i>{{ task.event_count }} event{{ 's' if task.event_count != 1 else '' }}
+      </span>
+      <span class="text-secondary small text-nowrap">
+        {{ task.updated_at[:10] }}
+      </span>
+    </div>
+    {% if task.description %}
+    <div class="text-secondary small mt-1">
+      {{ task.description[:120] }}{% if task.description|length > 120 %}…{% endif %}
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-secondary py-5">
+  <i class="bi bi-check2-square fs-1 d-block mb-2"></i>
+  No tasks found.
+  <a href="{{ url_for('tasks.new_task') }}" class="d-block mt-2">Create the first task</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}Event #{{ event.id }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-start justify-content-between mt-2 mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-1">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('events.index') }}" class="text-secondary">Events</a>
+        </li>
+        <li class="breadcrumb-item active text-light">Event #{{ event.id }}</li>
+      </ol>
+    </nav>
+    <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+      {% if event.event_datetime %}
+      <span class="font-monospace text-info">
+        <i class="bi bi-clock me-1"></i><span data-utc="{{ event.event_datetime }}">{{ event.event_datetime[:19] }}Z</span>
+      </span>
+      {% endif %}
+      {% if event.show_on_timeline %}
+      <span class="badge bg-dark border border-info text-info">
+        <i class="bi bi-calendar-check me-1"></i>Timeline
+      </span>
+      {% endif %}
+      {% if event.event_category %}
+      <span class="badge bg-secondary font-monospace">{{ event.event_category }}</span>
+      {% endif %}
+    </div>
+    {% if event.tags %}
+    <div class="d-flex flex-wrap gap-1 mt-2">
+      {% for tag in event.tags %}
+      <a href="{{ url_for('events.index', tag=tag.name) }}"
+         class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2 mt-1 flex-shrink-0">
+    <a href="{{ url_for('events.edit_event', event_id=event.id) }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit
+    </a>
+    <a href="{{ url_for('events.delete_event', event_id=event.id) }}"
+       class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {# Left column #}
+  <div class="col-lg-8">
+
+    {# Where / System #}
+    {% if event.system or event.account %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-pc-display me-1"></i>System
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if event.system %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">Hostname / System</span>
+          <span class="font-monospace text-success" id="field-system">{{ event.system }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-system', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+        {% if event.account %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">Account / Username</span>
+          <span class="font-monospace text-success" id="field-account">{{ event.account }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-account', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# Source #}
+    {% if event.high_level_source or event.detailed_source %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-database me-1"></i>Source
+      </div>
+      <ul class="list-group list-group-flush">
+        {% if event.high_level_source %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">High-Level Source</span>
+          <span class="text-light small">{{ event.high_level_source }}</span>
+        </li>
+        {% endif %}
+        {% if event.detailed_source %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">Detailed Source</span>
+          <pre class="font-monospace text-success small mb-0" id="field-detailed-source"
+               style="white-space: pre-wrap;">{{ event.detailed_source }}</pre>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-detailed-source', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {# Notes #}
+    {% if event.notes %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-journal-text me-1"></i>Notes
+      </div>
+      <div class="card-body">
+        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ event.notes }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Screenshot #}
+    {% if event.screenshot_path %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-image me-1"></i>Screenshot
+      </div>
+      <div class="card-body">
+        <img src="{{ url_for('static', filename='uploads/events/' ~ event.screenshot_path) }}"
+             alt="Event screenshot"
+             class="img-fluid rounded border border-secondary"
+             style="max-width:100%;">
+      </div>
+    </div>
+    {% endif %}
+
+    {# Linked IOC #}
+    {% if event.linked_ioc %}
+    {% set ioc = event.linked_ioc %}
+    <div class="card bg-dark border-warning border-opacity-50 mb-3">
+      <div class="card-header border-warning border-opacity-50 text-secondary small">
+        <i class="bi bi-shield-exclamation me-1 text-warning"></i>Linked IOC
+      </div>
+      <div class="card-body">
+        <p class="mb-1">
+          <a href="{{ url_for('iocs.detail', ioc_id=ioc.id) }}"
+             class="text-warning text-decoration-none fw-semibold">
+            IOC #{{ ioc.id }}
+          </a>
+          {% if ioc.category %}
+          <span class="text-secondary ms-2 small font-monospace">{{ ioc.category }}</span>
+          {% endif %}
+        </p>
+        {% set _prio = [ioc.ip_address, ioc.domain, ioc.hash_value, ioc.filename,
+                        ioc.hostname, ioc.url] %}
+        {% set ns = namespace(primary='') %}
+        {% for val in _prio %}{% if val and not ns.primary %}{% set ns.primary = val %}{% endif %}{% endfor %}
+        {% if ns.primary %}
+        <span class="font-monospace text-success small">{{ ns.primary }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  {# Right column: metadata + history #}
+  <div class="col-lg-4">
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-info-circle me-1"></i>Metadata
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Timeline</span>
+          <span>
+            {% if event.show_on_timeline %}
+            <span class="badge bg-info text-dark">Yes</span>
+            {% else %}
+            <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </span>
+        </li>
+        {% if event.event_datetime %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Event Time (UTC)</span>
+          <span class="text-light small font-monospace" data-utc="{{ event.event_datetime }}">{{ event.event_datetime[:19] }}Z</span>
+        </li>
+        {% endif %}
+        {% if event.task_id %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">External Ref</span>
+          <span class="text-light small font-monospace">{{ event.task_id }}</span>
+        </li>
+        {% endif %}
+        {% if event.linked_task %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center">
+          <span class="text-secondary small">Linked Task</span>
+          <a href="{{ url_for('tasks.detail', task_id=event.linked_task.id) }}"
+             class="text-primary small text-decoration-none">
+            #{{ event.linked_task.id }} — {{ event.linked_task.title[:40] }}
+          </a>
+        </li>
+        {% endif %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created by</span>
+          <span class="text-light small">{{ event.created_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Created at</span>
+          <span class="text-light small" data-utc="{{ event.created_at }}">{{ event.created_at[:19] }}Z</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated by</span>
+          <span class="text-light small">{{ event.updated_by }}</span>
+        </li>
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">Last updated at</span>
+          <span class="text-light small" data-utc="{{ event.updated_at }}">{{ event.updated_at[:19] }}Z</span>
+        </li>
+      </ul>
+    </div>
+
+    {# Edit history accordion #}
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small d-flex align-items-center">
+        <i class="bi bi-clock-history me-1"></i>Edit History
+        <span class="badge bg-secondary ms-1">{{ history|length }}</span>
+        <a href="{{ url_for('events.event_history', event_id=event.id) }}"
+           class="btn btn-outline-secondary btn-sm ms-auto py-0">
+          <i class="bi bi-list-ul me-1"></i>Full History
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if history %}
+        <div class="accordion accordion-flush" id="historyAccordion">
+          {% for entry in history %}
+          <div class="accordion-item bg-dark border-secondary">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed bg-dark text-light small py-2"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#hist-{{ loop.index }}">
+                <span class="me-2 text-info">{{ entry.edited_at[:19] }}Z</span>
+                <span class="text-secondary me-2">{{ entry.editor_name }}</span>
+                <span class="text-muted fst-italic text-truncate" style="max-width: 120px;">
+                  {{ entry.change_summary }}
+                </span>
+              </button>
+            </h2>
+            <div id="hist-{{ loop.index }}" class="accordion-collapse collapse"
+                 data-bs-parent="#historyAccordion">
+              <div class="accordion-body py-2 px-3 small">
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Note:</strong> {{ entry.change_summary }}
+                </p>
+                <p class="mb-1 text-secondary">
+                  <strong class="text-light">Editor:</strong> {{ entry.editor_name }}
+                </p>
+                <p class="mb-0 text-secondary">
+                  <strong class="text-light">Time:</strong> {{ entry.edited_at[:19] }}Z
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary small p-3 mb-0">No edit history yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

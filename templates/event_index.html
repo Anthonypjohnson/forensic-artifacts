@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Events — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
+  <h4 class="mb-0 text-info font-monospace">
+    <i class="bi bi-calendar-event me-2"></i>Events
+  </h4>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('events.export_csv', q=search or None, ioc=ioc_filter or None, system=system_filter or None, account=account_filter or None, tag=tag_filter or None, source=source_filter or None) }}"
+       class="btn btn-outline-success btn-sm">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+    <a href="{{ url_for('events.import_csv') }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-upload me-1"></i>Import
+    </a>
+    <a class="btn btn-info btn-sm text-dark" href="{{ url_for('events.new_event') }}">
+      <i class="bi bi-plus-lg me-1"></i>New Event
+    </a>
+  </div>
+</div>
+
+{# Search bar #}
+<form class="mb-3" method="get" action="{{ url_for('events.index') }}" id="event-search-form">
+  <div class="input-group">
+    <span class="input-group-text bg-dark border-secondary">
+      <i class="bi bi-search text-secondary"></i>
+    </span>
+    <input type="text" class="form-control bg-dark border-secondary text-light"
+           id="event-search-input" name="q" value="{{ search }}"
+           placeholder="Search events…" autocomplete="off">
+    {% if ioc_filter %}<input type="hidden" name="ioc" value="{{ ioc_filter }}">{% endif %}
+    {% if system_filter %}<input type="hidden" name="system" value="{{ system_filter }}">{% endif %}
+    {% if account_filter %}<input type="hidden" name="account" value="{{ account_filter }}">{% endif %}
+    {% if tag_filter %}<input type="hidden" name="tag" value="{{ tag_filter }}">{% endif %}
+    {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
+    {% if search %}
+    <a class="btn btn-outline-secondary"
+       href="{{ url_for('events.index', ioc=ioc_filter or None, system=system_filter or None,
+                        account=account_filter or None, tag=tag_filter or None,
+                        source=source_filter or None) }}">
+      <i class="bi bi-x-lg"></i>
+    </a>
+    {% endif %}
+  </div>
+</form>
+
+{# Additional filters row #}
+<div class="row g-2 mb-3">
+  <div class="col-sm-4">
+    <select class="form-select form-select-sm bg-dark border-secondary text-light"
+            onchange="this.form && this.form.submit()"
+            name="ioc" form="event-search-form">
+      <option value="">All IOCs</option>
+      {% for ioc in all_iocs %}
+      <option value="{{ ioc.id }}" {% if ioc_filter == ioc.id|string %}selected{% endif %}>
+        {{ ioc.label }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-4">
+    <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+           name="system" form="event-search-form"
+           placeholder="Filter by system…" value="{{ system_filter }}">
+  </div>
+  <div class="col-sm-4">
+    <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+           name="account" form="event-search-form"
+           placeholder="Filter by account…" value="{{ account_filter }}">
+  </div>
+</div>
+
+{# Tag filter pills #}
+{% if all_tags %}
+<div class="mb-4 d-flex flex-wrap gap-2 align-items-center">
+  <span class="text-secondary small"><i class="bi bi-tags me-1"></i>Tag:</span>
+  <a href="{{ url_for('events.index', q=search or None, ioc=ioc_filter or None,
+                       system=system_filter or None, account=account_filter or None) }}"
+     class="badge rounded-pill text-decoration-none
+            {% if not tag_filter %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+    All
+  </a>
+  {% for tag in all_tags %}
+  <a href="{{ url_for('events.index', tag=tag.name, q=search or None, ioc=ioc_filter or None,
+                       system=system_filter or None, account=account_filter or None) }}"
+     class="badge rounded-pill text-decoration-none
+            {% if tag_filter == tag.name %}bg-info text-dark{% else %}bg-secondary{% endif %}">
+    {{ tag.name }}
+    <span class="ms-1 opacity-75">{{ tag.count }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Results — sorted by event_datetime DESC #}
+<div id="event-grid" class="list-group list-group-flush border border-secondary rounded">
+  {% for event in events %}
+  {% include "_event_card.html" %}
+  {% else %}
+  <div class="text-center text-secondary py-5">
+    <i class="bi bi-calendar-x display-4"></i>
+    <p class="mt-3">No events found.
+      {% if search or ioc_filter or system_filter or account_filter or tag_filter or source_filter %}
+        <a href="{{ url_for('events.index') }}">Clear filters</a>
+      {% else %}
+        <a href="{{ url_for('events.new_event') }}">Record the first one.</a>
+      {% endif %}
+    </p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

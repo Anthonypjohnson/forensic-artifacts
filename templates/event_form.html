@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="mt-2 mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-1">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('events.index') }}" class="text-secondary">Events</a>
+      </li>
+      {% if event %}
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('events.detail', event_id=event.id) }}"
+           class="text-secondary">Event #{{ event.id }}</a>
+      </li>
+      {% endif %}
+      <li class="breadcrumb-item active text-light">{{ title }}</li>
+    </ol>
+  </nav>
+  <h4 class="mb-0 text-light">{{ title }}</h4>
+</div>
+
+{% macro field_row(field, mono=false, rows=3) %}
+<div class="mb-3">
+  {{ field.label(class="form-label text-secondary small") }}
+  {% if field.type == 'TextAreaField' %}
+    {{ field(class="form-control bg-dark border-secondary text-light" ~ (" font-monospace" if mono else ""), rows=rows) }}
+  {% elif field.type == 'SelectField' %}
+    {{ field(class="form-select bg-dark border-secondary text-light") }}
+  {% else %}
+    {{ field(class="form-control bg-dark border-secondary text-light" ~ (" font-monospace" if mono else "")) }}
+  {% endif %}
+  {% for error in field.errors %}
+  <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+
+      {# Card 1 — Links #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-link-45deg me-1"></i>Links
+        </div>
+        <div class="card-body">
+          <div class="d-flex gap-2 align-items-end">
+            <div class="flex-grow-1">{{ field_row(form.ioc_id) }}</div>
+            <div class="mb-3">
+              <a href="{{ url_for('iocs.new_ioc') }}" target="_blank"
+                 class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>New IOC
+              </a>
+            </div>
+          </div>
+          <div class="d-flex gap-2 align-items-end">
+            <div class="flex-grow-1">{{ field_row(form.linked_task_id) }}</div>
+            <div class="mb-3">
+              <a href="{{ url_for('tasks.new_task') }}" target="_blank"
+                 class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>New Task
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Card 2 — Event Details #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-calendar-event me-1"></i>Event Details
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            {{ form.event_datetime.label(class="form-label text-secondary small") }}
+            <input type="datetime-local"
+                   class="form-control bg-dark border-secondary text-light"
+                   id="{{ form.event_datetime.id }}"
+                   name="{{ form.event_datetime.name }}"
+                   value="{{ form.event_datetime.data or '' }}"
+                   step="1">
+            {% for error in form.event_datetime.errors %}
+            <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-8">{{ field_row(form.event_category) }}</div>
+            <div class="col-sm-4 d-flex align-items-center pt-4">
+              <div class="form-check">
+                {{ form.show_on_timeline(class="form-check-input") }}
+                {{ form.show_on_timeline.label(class="form-check-label text-secondary") }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# Card 3 — Where #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-pc-display me-1"></i>Where
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-sm-6">{{ field_row(form.system, mono=true) }}</div>
+            <div class="col-sm-6">{{ field_row(form.account, mono=true) }}</div>
+          </div>
+          {{ field_row(form.high_level_source) }}
+          {{ field_row(form.detailed_source, mono=true, rows=3) }}
+        </div>
+      </div>
+
+      {# Card 4 — Evidence #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-journal-text me-1"></i>Evidence
+        </div>
+        <div class="card-body">
+          {{ field_row(form.notes, rows=4) }}
+
+          {# Screenshot upload area #}
+          <div class="mb-3">
+            {{ form.screenshot.label(class="form-label text-secondary small") }}
+            <input type="file" class="form-control bg-dark border-secondary text-light"
+                   id="screenshot" name="screenshot" accept="image/*">
+            {% for error in form.screenshot.errors %}
+            <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+            {% endfor %}
+            <div class="form-text text-secondary small">
+              Paste an image from clipboard directly into this page (Ctrl+V / Cmd+V).
+            </div>
+          </div>
+
+          {# Clipboard paste preview #}
+          <div id="paste-preview" class="mb-3" style="display:none;">
+            <p class="text-secondary small mb-1">Clipboard image preview:</p>
+            <img id="paste-preview-img" src="" alt="paste preview"
+                 class="img-fluid rounded border border-secondary" style="max-height:200px;">
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                    onclick="clearPastePreview()">
+              <i class="bi bi-x-lg me-1"></i>Clear
+            </button>
+          </div>
+
+          {# Show existing screenshot in edit mode #}
+          {% if event and event.screenshot_path %}
+          <div class="mb-3" id="current-screenshot-section">
+            <p class="text-secondary small mb-1">Current screenshot:</p>
+            <img src="{{ url_for('static', filename='uploads/events/' ~ event.screenshot_path) }}"
+                 alt="screenshot" class="img-fluid rounded border border-secondary"
+                 style="max-height:200px;">
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox"
+                     name="remove_screenshot" id="remove_screenshot" value="1">
+              <label class="form-check-label text-danger small" for="remove_screenshot">
+                Remove existing screenshot
+              </label>
+            </div>
+          </div>
+          {% endif %}
+
+          {{ field_row(form.task_id) }}
+          {# task_id is the external reference (e.g. Jira/ServiceNow ticket); linked_task_id is the internal FK #}
+        </div>
+      </div>
+
+      {# Card 5 — Tags & Authorship #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-person-badge me-1"></i>Tags &amp; Authorship
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            {{ form.tags.label(class="form-label text-secondary small") }}
+            {{ form.tags(class="form-control bg-dark border-secondary text-light",
+                         id="event-tags-input", autocomplete="off") }}
+            <div class="form-text text-secondary small">Comma-separated tags</div>
+          </div>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="mb-3">
+                {{ form.editor_name.label(class="form-label text-secondary small") }}
+                {{ form.editor_name(class="form-control bg-dark border-secondary text-secondary", readonly=True) }}
+              </div>
+            </div>
+            <div class="col-sm-6">{{ field_row(form.change_note) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        {{ form.submit(class="btn btn-info text-dark") }}
+        {% if event %}
+        <a href="{{ url_for('events.detail', event_id=event.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+        {% else %}
+        <a href="{{ url_for('events.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// IOC tag autocomplete (reuses the same /api/ioc-tags endpoint)
+const eventTagsInput = document.getElementById('event-tags-input');
+if (eventTagsInput) {
+  fetchIocTags();
+  eventTagsInput.addEventListener('keyup', debounce(function(e) {
+    autocompleteIocTag(e);
+  }, 300));
+}
+
+// Clipboard paste → screenshot field
+document.addEventListener('paste', function(e) {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile();
+      if (!file) continue;
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('screenshot').files = dt.files;
+      } catch (_) {}
+      // Show preview
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        document.getElementById('paste-preview-img').src = ev.target.result;
+        document.getElementById('paste-preview').style.display = '';
+      };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+});
+
+function clearPastePreview() {
+  document.getElementById('paste-preview').style.display = 'none';
+  document.getElementById('paste-preview-img').src = '';
+  document.getElementById('screenshot').value = '';
+}
+</script>
+{% endblock %}

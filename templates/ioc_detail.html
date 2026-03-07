@@ -15,10 +15,10 @@
         <li class="breadcrumb-item">
           <a href="{{ url_for('iocs.index') }}" class="text-secondary">IOCs</a>
         </li>
-        {% if ioc.case_name %}
+        {% if ioc.category %}
         <li class="breadcrumb-item">
-          <a href="{{ url_for('iocs.index', case=ioc.case_name) }}"
-             class="text-secondary">{{ ioc.case_name }}</a>
+          <a href="{{ url_for('iocs.index', category=ioc.category) }}"
+             class="text-secondary">{{ ioc.category }}</a>
         </li>
         {% endif %}
         <li class="breadcrumb-item active text-light">IOC #{{ ioc.id }}</li>
@@ -26,8 +26,8 @@
     </nav>
     <div class="d-flex align-items-center gap-2 mt-1">
       <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }} fs-6">{{ ioc.severity }}</span>
-      {% if ioc.case_name %}
-      <span class="text-secondary font-monospace">{{ ioc.case_name }}</span>
+      {% if ioc.category %}
+      <span class="text-secondary font-monospace">{{ ioc.category }}</span>
       {% endif %}
     </div>
     {% if ioc.tags %}
@@ -56,34 +56,80 @@
   <div class="col-lg-8">
 
     {# Network Indicators #}
-    {% if ioc.ip_address or ioc.domain or ioc.url or ioc.email %}
+    {% if ioc.ip_address or ioc.domain or ioc.url or ioc.email or ioc.user_agent or ioc.network_port or ioc.network_protocol %}
     <div class="card bg-dark border-secondary mb-3">
       <div class="card-header border-secondary text-secondary small">
         <i class="bi bi-globe me-1"></i>Network Indicators
       </div>
       <ul class="list-group list-group-flush">
         {% if ioc.ip_address %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">IP Address</span>
-          <span class="font-monospace text-success">{{ ioc.ip_address }}</span>
+          <span class="font-monospace text-success" id="field-ip-address">{{ ioc.ip_address }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-ip-address', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.domain %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Domain</span>
-          <span class="font-monospace text-success">{{ ioc.domain }}</span>
+          <span class="font-monospace text-success" id="field-domain">{{ ioc.domain }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-domain', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.url %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">URL</span>
-          <span class="font-monospace text-success text-break">{{ ioc.url }}</span>
+          <span class="font-monospace text-success text-break" id="field-url">{{ ioc.url }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-url', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.email %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Email</span>
-          <span class="font-monospace text-success">{{ ioc.email }}</span>
+          <span class="font-monospace text-success" id="field-email">{{ ioc.email }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-email', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+        {% if ioc.user_agent %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">User-Agent</span>
+          <span class="font-monospace text-success text-break" id="field-user-agent">{{ ioc.user_agent }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-user-agent', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+        {% if ioc.network_port %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">Network Port</span>
+          <span class="font-monospace text-success" id="field-network-port">{{ ioc.network_port }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-network-port', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </li>
+        {% endif %}
+        {% if ioc.network_protocol %}
+        <li class="list-group-item bg-dark border-secondary position-relative">
+          <span class="text-secondary small d-block">Network Protocol</span>
+          <span class="font-monospace text-success" id="field-network-protocol">{{ ioc.network_protocol }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-network-protocol', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
       </ul>
@@ -98,23 +144,35 @@
       </div>
       <ul class="list-group list-group-flush">
         {% if ioc.filename %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Filename</span>
-          <span class="font-monospace text-success">{{ ioc.filename }}</span>
+          <span class="font-monospace text-success" id="field-filename">{{ ioc.filename }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-filename', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.file_path %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">File Path</span>
-          <span class="font-monospace text-success text-break">{{ ioc.file_path }}</span>
+          <span class="font-monospace text-success text-break" id="field-file-path">{{ ioc.file_path }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-file-path', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.hash_value %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">
             Hash{% if ioc.hash_type %} ({{ ioc.hash_type }}){% endif %}
           </span>
-          <span class="font-monospace text-success text-break">{{ ioc.hash_value }}</span>
+          <span class="font-monospace text-success text-break" id="field-hash-value">{{ ioc.hash_value }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-hash-value', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
       </ul>
@@ -129,27 +187,43 @@
       </div>
       <ul class="list-group list-group-flush">
         {% if ioc.hostname %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Hostname / System</span>
-          <span class="font-monospace text-success">{{ ioc.hostname }}</span>
+          <span class="font-monospace text-success" id="field-hostname">{{ ioc.hostname }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-hostname', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.user_account %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">User Account</span>
-          <span class="font-monospace text-success">{{ ioc.user_account }}</span>
+          <span class="font-monospace text-success" id="field-user-account">{{ ioc.user_account }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-user-account', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.registry_key %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Registry Key</span>
-          <span class="font-monospace text-success text-break">{{ ioc.registry_key }}</span>
+          <span class="font-monospace text-success text-break" id="field-registry-key">{{ ioc.registry_key }}</span>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-registry-key', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
         {% if ioc.command_line %}
-        <li class="list-group-item bg-dark border-secondary">
+        <li class="list-group-item bg-dark border-secondary position-relative">
           <span class="text-secondary small d-block">Command Line</span>
-          <pre class="font-monospace text-success mb-0 small" style="white-space: pre-wrap;">{{ ioc.command_line }}</pre>
+          <pre class="font-monospace text-success mb-0 small" id="field-command-line" style="white-space: pre-wrap;">{{ ioc.command_line }}</pre>
+          <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-1 py-0"
+                  onclick="copyField('field-command-line', this)" title="Copy">
+            <i class="bi bi-clipboard"></i>
+          </button>
         </li>
         {% endif %}
       </ul>
@@ -168,6 +242,85 @@
     </div>
     {% endif %}
 
+    {# Detection Rule #}
+    {% if ioc.detection_rule %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-shield-check me-1"></i>Detection Rule
+      </div>
+      <div class="card-body position-relative">
+        <pre class="font-monospace text-success small mb-0" id="field-detection-rule" style="white-space: pre-wrap;">{{ ioc.detection_rule }}</pre>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                onclick="copyField('field-detection-rule', this)" title="Copy">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Associated Events #}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small d-flex align-items-center gap-2">
+        <i class="bi bi-calendar-event me-1"></i>Associated Events
+        <span class="badge bg-secondary">{{ events | length }}</span>
+        {% if events %}
+        <a href="{{ url_for('events.index', ioc=ioc.id) }}"
+           class="btn btn-outline-secondary btn-sm ms-auto py-0">
+          <i class="bi bi-box-arrow-up-right me-1"></i>View all
+        </a>
+        {% endif %}
+      </div>
+      {% if events %}
+      <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+        {% for event in events %}
+        <a href="{{ url_for('events.detail', event_id=event.id) }}"
+           class="list-group-item list-group-item-action bg-dark border-secondary text-decoration-none py-2 px-3">
+          <div class="d-flex align-items-start gap-2">
+            <div class="flex-grow-1 min-w-0">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                {% if event.event_datetime %}
+                <span class="font-monospace text-info small text-nowrap"
+                      data-utc="{{ event.event_datetime }}">{{ event.event_datetime[:19] }}Z</span>
+                {% endif %}
+                {% if event.event_category %}
+                <span class="badge bg-secondary">{{ event.event_category }}</span>
+                {% endif %}
+                {% if event.show_on_timeline %}
+                <span class="badge bg-primary" title="On timeline">
+                  <i class="bi bi-clock-history"></i>
+                </span>
+                {% endif %}
+              </div>
+              {% if event.system or event.account %}
+              <div class="text-secondary small mt-1">
+                {% if event.system %}<i class="bi bi-pc-display me-1"></i>{{ event.system }}{% endif %}
+                {% if event.system and event.account %} &mdash; {% endif %}
+                {% if event.account %}<i class="bi bi-person me-1"></i>{{ event.account }}{% endif %}
+              </div>
+              {% endif %}
+              {% if event.high_level_source %}
+              <div class="text-secondary small text-truncate">
+                <i class="bi bi-journal me-1"></i>{{ event.high_level_source }}
+              </div>
+              {% endif %}
+              {% if event.notes %}
+              <div class="text-secondary small mt-1 text-truncate">{{ event.notes }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card-body">
+        <p class="text-secondary small mb-0">
+          No events linked to this IOC yet.
+          <a href="{{ url_for('events.new_event') }}" class="text-secondary">Create one.</a>
+        </p>
+      </div>
+      {% endif %}
+    </div>
+
   </div>
 
   {# Right column: metadata + history #}
@@ -181,10 +334,16 @@
           <span class="text-secondary small">Severity</span>
           <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }}">{{ ioc.severity }}</span>
         </li>
-        {% if ioc.case_name %}
+        {% if ioc.category %}
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
-          <span class="text-secondary small">Case / Hunt</span>
-          <span class="text-light small font-monospace">{{ ioc.case_name }}</span>
+          <span class="text-secondary small">Category</span>
+          <span class="text-light small font-monospace">{{ ioc.category }}</span>
+        </li>
+        {% endif %}
+        {% if ioc.mitre_category %}
+        <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
+          <span class="text-secondary small">MITRE Tactic</span>
+          <span class="text-light small">{{ ioc.mitre_category }}</span>
         </li>
         {% endif %}
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
@@ -193,7 +352,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Created at</span>
-          <span class="text-light small">{{ ioc.created_at[:10] }}</span>
+          <span class="text-light small" data-utc="{{ ioc.created_at }}">{{ ioc.created_at[:19] }}Z</span>
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Last updated by</span>
@@ -201,7 +360,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Last updated at</span>
-          <span class="text-light small">{{ ioc.updated_at[:16].replace('T', ' ') }}</span>
+          <span class="text-light small" data-utc="{{ ioc.updated_at }}">{{ ioc.updated_at[:19] }}Z</span>
         </li>
       </ul>
     </div>
@@ -226,7 +385,7 @@
                       type="button"
                       data-bs-toggle="collapse"
                       data-bs-target="#hist-{{ loop.index }}">
-                <span class="me-2 text-warning">{{ entry.edited_at[:10] }}</span>
+                <span class="me-2 text-warning">{{ entry.edited_at[:19] }}Z</span>
                 <span class="text-secondary me-2">{{ entry.editor_name }}</span>
                 <span class="text-muted fst-italic text-truncate" style="max-width: 120px;">
                   {{ entry.change_summary }}
@@ -244,7 +403,7 @@
                 </p>
                 <p class="mb-0 text-secondary">
                   <strong class="text-light">Time:</strong>
-                  {{ entry.edited_at[:16].replace('T', ' ') }} UTC
+                  {{ entry.edited_at[:19] }}Z
                 </p>
                 {% if entry.snapshot %}
                 <hr class="border-secondary my-2">

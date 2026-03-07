@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Import Preview — ForensicArtifacts{% endblock %}
+
+{% block content %}
+{% set sev_badge = {
+    'Low': 'bg-secondary',
+    'Medium': 'bg-warning text-dark',
+    'High': 'bg-danger',
+    'Critical': 'bg-danger'
+} %}
+
+<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
+  <h4 class="mb-0 text-warning font-monospace">
+    <i class="bi bi-table me-2"></i>Import Preview &mdash; {{ iocs|length }} indicator{{ 's' if iocs|length != 1 else '' }} from <span class="text-light font-monospace">{{ source }}</span>
+  </h4>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('iocs.import_stix') }}">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="table-responsive mb-4" style="max-height: 60vh; overflow-y: auto;">
+  <table class="table table-dark table-sm table-hover align-middle border-secondary">
+    <thead class="sticky-top bg-dark border-secondary">
+      <tr>
+        <th class="text-secondary" style="width:3rem">#</th>
+        <th class="text-secondary">Primary Indicator</th>
+        <th class="text-secondary">Field</th>
+        <th class="text-secondary">Category</th>
+        <th class="text-secondary">Severity</th>
+        <th class="text-secondary">MITRE Tactic</th>
+        <th class="text-secondary">Tags</th>
+      </tr>
+    </thead>
+    <tbody class="font-monospace small">
+      {% for ioc in iocs %}
+      {% set ns = namespace(primary='', field='') %}
+      {% set _priority = [
+          ('ip_address',   ioc.ip_address),
+          ('domain',       ioc.domain),
+          ('hash_value',   ioc.hash_value),
+          ('filename',     ioc.filename),
+          ('hostname',     ioc.hostname),
+          ('url',          ioc.url),
+          ('email',        ioc.email),
+          ('registry_key', ioc.registry_key),
+          ('command_line', ioc.command_line),
+          ('user_account', ioc.user_account),
+          ('file_path',    ioc.file_path),
+      ] %}
+      {% for fname, val in _priority %}
+        {% if val and not ns.primary %}
+          {% set ns.primary = val %}
+          {% set ns.field = fname %}
+        {% endif %}
+      {% endfor %}
+      {% if not ns.primary %}
+        {% set ns.primary = ioc.notes %}
+        {% set ns.field = 'notes' %}
+      {% endif %}
+      <tr>
+        <td class="text-secondary">{{ loop.index }}</td>
+        <td class="text-success text-break" style="max-width:22rem">
+          {{ ns.primary[:120] }}{% if ns.primary|length > 120 %}…{% endif %}
+        </td>
+        <td class="text-secondary">{{ ns.field }}</td>
+        <td>
+          {% if ioc.category %}
+          <span class="badge bg-dark border border-secondary text-secondary">
+            {{ ioc.category[:30] }}{% if ioc.category|length > 30 %}…{% endif %}
+          </span>
+          {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td>
+          <span class="badge {{ sev_badge.get(ioc.severity, 'bg-secondary') }}">
+            {{ ioc.severity }}
+          </span>
+        </td>
+        <td class="text-secondary">
+          {{ ioc.mitre_category or '—' }}
+        </td>
+        <td>
+          {% for tag in ioc._tags %}
+          <span class="badge bg-secondary me-1">{{ tag }}</span>
+          {% else %}
+          <span class="text-muted">—</span>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card bg-dark border-warning">
+      <div class="card-body">
+        <form method="post" action="{{ url_for('iocs.import_stix_confirm') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <textarea name="import_data" style="display:none">{{ import_json }}</textarea>
+
+          <div class="mb-3">
+            <label for="extra_tags" class="form-label text-light">
+              Add tags to all imported IOCs
+              <span class="text-secondary fw-normal small">(comma-separated, merged with per-indicator tags)</span>
+            </label>
+            <input type="text" class="form-control bg-dark border-secondary text-light"
+                   id="ioc-tags-input" name="extra_tags"
+                   placeholder="e.g. apt29, campaign-2025, phishing"
+                   autocomplete="off">
+          </div>
+
+          <div class="mb-3">
+            <label for="change_note" class="form-label text-light">Change Note</label>
+            <input type="text" class="form-control bg-dark border-secondary text-light"
+                   id="change_note" name="change_note"
+                   value="Imported from STIX: {{ source }}"
+                   maxlength="512">
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning text-dark">
+              <i class="bi bi-cloud-upload me-1"></i>Import All {{ iocs|length }} IOC{{ 's' if iocs|length != 1 else '' }}
+            </button>
+            <a href="{{ url_for('iocs.index') }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

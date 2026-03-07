@@ -1,32 +1,34 @@
 {% extends "base.html" %}
-{% block title %}History — {{ artifact.name }} — ForensicArtifacts{% endblock %}
+{% block title %}History — Event #{{ event.id }} — ForensicArtifacts{% endblock %}
 
 {% block content %}
 <div class="mt-2 mb-4">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb mb-1">
       <li class="breadcrumb-item">
-        <a href="{{ url_for('artifacts.index') }}" class="text-secondary">Artifacts</a>
+        <a href="{{ url_for('events.index') }}" class="text-secondary">Events</a>
       </li>
       <li class="breadcrumb-item">
-        <a href="{{ url_for('artifacts.detail', artifact_id=artifact.id) }}"
-           class="text-secondary">{{ artifact.name }}</a>
+        <a href="{{ url_for('events.detail', event_id=event.id) }}"
+           class="text-secondary">Event #{{ event.id }}</a>
       </li>
       <li class="breadcrumb-item active text-light">History</li>
     </ol>
   </nav>
   <h3 class="mb-0 text-light">
     <i class="bi bi-clock-history me-2"></i>Version History
-    <span class="fs-6 text-secondary ms-2 fw-normal">{{ artifact.name }}</span>
+    <span class="fs-6 text-secondary ms-2 fw-normal">Event #{{ event.id }}
+      {% if event.system %} — {{ event.system }}{% endif %}
+    </span>
   </h3>
 </div>
 
 {% if versions %}
   {% for v in versions %}
-  <div class="card bg-dark border-secondary mb-3">
-    <div class="card-header border-secondary d-flex align-items-center gap-2 flex-wrap">
+  <div class="card bg-dark border-info border-opacity-25 mb-3">
+    <div class="card-header border-info border-opacity-25 d-flex align-items-center gap-2 flex-wrap">
       <span class="badge bg-secondary font-monospace">
-        {{ v.entry.changed_at[:19] }}Z
+        {{ v.entry.edited_at[:19] }}Z
       </span>
       <span class="text-secondary small">{{ v.entry.editor_name }}</span>
       {% if v.entry.change_summary %}
@@ -47,9 +49,9 @@
       <table class="table table-dark table-sm mb-0 border-secondary">
         <thead class="text-secondary small">
           <tr>
-            <th style="width: 12%;">Field</th>
-            <th style="width: 44%;">Before</th>
-            <th style="width: 44%;">After</th>
+            <th style="width: 14%;">Field</th>
+            <th style="width: 43%;">Before</th>
+            <th style="width: 43%;">After</th>
           </tr>
         </thead>
         <tbody class="small">

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Timeline — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mt-2 mb-3">
+  <h4 class="mb-0 text-light"><i class="bi bi-clock-history me-2"></i>Timeline</h4>
+  <a href="{{ url_for('timeline.export_csv', date_from=date_from or None, date_to=date_to or None, system=system_filter or None, ioc=ioc_filter or None, category=category_filter or None, tag=tag_filter or None) }}"
+     class="btn btn-outline-success btn-sm">
+    <i class="bi bi-download me-1"></i>Export CSV
+  </a>
+</div>
+
+{# Filter bar #}
+<form method="get" class="mb-4">
+  <div class="row g-2 align-items-end">
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label text-secondary small mb-1">From</label>
+      <input type="date" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label text-secondary small mb-1">To</label>
+      <input type="date" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label text-secondary small mb-1">System</label>
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="system" value="{{ system_filter }}" placeholder="Hostname…">
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label text-secondary small mb-1">IOC</label>
+      <select class="form-select form-select-sm bg-dark border-secondary text-light" name="ioc">
+        <option value="">All IOCs</option>
+        {% for ioc in all_iocs %}
+        <option value="{{ ioc.id }}" {% if ioc_filter == ioc.id|string %}selected{% endif %}>
+          {{ ioc.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label text-secondary small mb-1">Category</label>
+      <input type="text" class="form-control form-control-sm bg-dark border-secondary text-light"
+             name="category" value="{{ category_filter }}" placeholder="MITRE Tactic…">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Filter</button>
+      {% if date_from or date_to or system_filter or ioc_filter or category_filter or tag_filter %}
+      <a href="{{ url_for('timeline.index') }}" class="btn btn-outline-danger btn-sm ms-1">Clear</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Tag pills #}
+  {% if all_tags %}
+  <div class="d-flex flex-wrap gap-1 mt-2">
+    <a href="{{ url_for('timeline.index', date_from=date_from, date_to=date_to, system=system_filter, ioc=ioc_filter, category=category_filter) }}"
+       class="badge text-decoration-none {% if not tag_filter %}bg-secondary{% else %}bg-dark border border-secondary text-secondary{% endif %}">
+      All tags
+    </a>
+    {% for tag in all_tags %}
+    <a href="{{ url_for('timeline.index', date_from=date_from, date_to=date_to, system=system_filter, ioc=ioc_filter, category=category_filter, tag=tag.name) }}"
+       class="badge text-decoration-none {% if tag_filter == tag.name %}bg-primary{% else %}bg-dark border border-secondary text-secondary{% endif %}">
+      {{ tag.name }} <span class="opacity-75">{{ tag.count }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</form>
+
+{% if grouped %}
+{% for date_key, events in grouped.items() %}
+<div class="mb-4">
+  <div class="d-flex align-items-center gap-3 mb-2">
+    <span class="font-monospace text-info fw-semibold fs-6">
+      <i class="bi bi-calendar3 me-1"></i>{{ date_key }}
+    </span>
+    <span class="badge bg-secondary">{{ events|length }} event{{ 's' if events|length != 1 else '' }}</span>
+    <hr class="flex-grow-1 border-secondary m-0">
+  </div>
+  <div class="list-group">
+    {% for event in events %}
+    {% include "_event_card.html" %}
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center text-secondary py-5">
+  <i class="bi bi-clock-history fs-1 d-block mb-2"></i>
+  No dated events match the current filters.
+</div>
+{% endif %}
+{% endblock %}

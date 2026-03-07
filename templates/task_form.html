@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="mt-2 mb-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-1">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('tasks.index') }}" class="text-secondary">Tasks</a>
+      </li>
+      {% if task %}
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('tasks.detail', task_id=task.id) }}"
+           class="text-secondary">Task #{{ task.id }}</a>
+      </li>
+      {% endif %}
+      <li class="breadcrumb-item active text-light">{{ title }}</li>
+    </ol>
+  </nav>
+  <h4 class="mb-0 text-light">{{ title }}</h4>
+</div>
+
+{% macro field_row(field, rows=4) %}
+<div class="mb-3">
+  {{ field.label(class="form-label text-secondary small") }}
+  {% if field.type == 'TextAreaField' %}
+    {{ field(class="form-control bg-dark border-secondary text-light", rows=rows) }}
+  {% elif field.type == 'SelectField' %}
+    {{ field(class="form-select bg-dark border-secondary text-light") }}
+  {% else %}
+    {{ field(class="form-control bg-dark border-secondary text-light") }}
+  {% endif %}
+  {% for error in field.errors %}
+  <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-check2-square me-1"></i>Task Details
+        </div>
+        <div class="card-body">
+          {{ field_row(form.title) }}
+          <div class="row g-3">
+            <div class="col-sm-6">{{ field_row(form.status) }}</div>
+            <div class="col-sm-6">{{ field_row(form.priority) }}</div>
+          </div>
+          {{ field_row(form.assignee) }}
+        </div>
+      </div>
+
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-text-left me-1"></i>Description &amp; Notes
+        </div>
+        <div class="card-body">
+          {{ field_row(form.description, rows=5) }}
+          {{ field_row(form.notes, rows=4) }}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        {{ form.submit(class="btn btn-primary") }}
+        {% if task %}
+        <a href="{{ url_for('tasks.detail', task_id=task.id) }}"
+           class="btn btn-outline-secondary">Cancel</a>
+        {% else %}
+        <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-secondary">Cancel</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

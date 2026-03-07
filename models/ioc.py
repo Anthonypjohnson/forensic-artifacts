@@ -3,15 +3,17 @@ from datetime import datetime, timezone
 from database.db import get_db
 
 IOC_FIELDS = [
-    'case_name', 'severity', 'hostname', 'ip_address', 'domain', 'url',
+    'category', 'severity', 'hostname', 'ip_address', 'domain', 'url',
     'hash_value', 'hash_type', 'filename', 'file_path',
     'registry_key', 'command_line', 'email', 'user_account', 'notes',
+    'user_agent', 'mitre_category', 'detection_rule', 'network_port', 'network_protocol',
 ]
 
 # Priority order for "primary indicator" display on cards
 _INDICATOR_PRIORITY = [
     'ip_address', 'domain', 'hash_value', 'filename', 'hostname',
-    'url', 'email', 'registry_key', 'command_line', 'user_account', 'file_path',
+    'url', 'user_agent', 'network_port', 'email', 'registry_key',
+    'command_line', 'user_account', 'file_path',
 ]
 
 
@@ -30,13 +32,14 @@ def get_primary_indicator(ioc):
 
 # ── Queries ─────────────────────────────────────────────────────────────────
 
-def get_all(search=None, case_filter=None, tag_filter=None):
+def get_all(search=None, category_filter=None, tag_filter=None):
     db = get_db()
     query = """
-        SELECT DISTINCT i.id, i.case_name, i.severity, i.hostname, i.ip_address,
+        SELECT DISTINCT i.id, i.category, i.severity, i.hostname, i.ip_address,
                i.domain, i.url, i.hash_value, i.hash_type, i.filename, i.file_path,
                i.registry_key, i.command_line, i.email, i.user_account, i.notes,
-               i.created_at, i.updated_at, i.created_by, i.updated_by
+               i.user_agent, i.mitre_category, i.detection_rule, i.network_port,
+               i.network_protocol, i.created_at, i.updated_at, i.created_by, i.updated_by
         FROM iocs i
     """
     params = []
@@ -52,19 +55,20 @@ def get_all(search=None, case_filter=None, tag_filter=None):
     if search:
         query += """
             AND (
-                i.case_name LIKE ? OR i.hostname LIKE ? OR i.ip_address LIKE ?
+                i.category LIKE ? OR i.hostname LIKE ? OR i.ip_address LIKE ?
                 OR i.domain LIKE ? OR i.url LIKE ? OR i.hash_value LIKE ?
                 OR i.filename LIKE ? OR i.file_path LIKE ? OR i.registry_key LIKE ?
                 OR i.command_line LIKE ? OR i.email LIKE ? OR i.user_account LIKE ?
-                OR i.notes LIKE ?
+                OR i.notes LIKE ? OR i.user_agent LIKE ? OR i.detection_rule LIKE ?
+                OR i.network_port LIKE ? OR i.network_protocol LIKE ?
             )
         """
         term = f"%{search}%"
-        params.extend([term] * 13)
+        params.extend([term] * 17)
 
-    if case_filter:
-        query += " AND i.case_name = ?"
-        params.append(case_filter)
+    if category_filter:
+        query += " AND i.category = ?"
+        params.append(category_filter)
 
     if tag_filter:
         query += " AND it.name = ?"
@@ -92,11 +96,11 @@ def get_by_id(ioc_id):
     return ioc
 
 
-def get_distinct_cases():
+def get_distinct_categories():
     rows = get_db().execute(
-        "SELECT DISTINCT case_name FROM iocs WHERE case_name != '' ORDER BY case_name COLLATE NOCASE"
+        "SELECT DISTINCT category FROM iocs WHERE category != '' ORDER BY category COLLATE NOCASE"
     ).fetchall()
-    return [r["case_name"] for r in rows]
+    return [r["category"] for r in rows]
 
 
 # ── Mutations ────────────────────────────────────────────────────────────────
@@ -107,14 +111,15 @@ def create(fields_dict, created_by, tag_names):
     cur = db.execute(
         """
         INSERT INTO iocs
-            (case_name, severity, hostname, ip_address, domain, url,
+            (category, severity, hostname, ip_address, domain, url,
              hash_value, hash_type, filename, file_path, registry_key,
              command_line, email, user_account, notes,
+             user_agent, mitre_category, detection_rule, network_port, network_protocol,
              created_at, updated_at, created_by, updated_by)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """,
         (
-            fields_dict.get('case_name', ''),
+            fields_dict.get('category', ''),
             fields_dict.get('severity', 'Medium'),
             fields_dict.get('hostname', ''),
             fields_dict.get('ip_address', ''),
@@ -129,6 +134,11 @@ def create(fields_dict, created_by, tag_names):
             fields_dict.get('email', ''),
             fields_dict.get('user_account', ''),
             fields_dict.get('notes', ''),
+            fields_dict.get('user_agent', ''),
+            fields_dict.get('mitre_category', ''),
+            fields_dict.get('detection_rule', ''),
+            fields_dict.get('network_port', ''),
+            fields_dict.get('network_protocol', ''),
             now, now, created_by, created_by,
         ),
     )
@@ -144,14 +154,15 @@ def update(ioc_id, fields_dict, updated_by, tag_names):
     db.execute(
         """
         UPDATE iocs
-        SET case_name=?, severity=?, hostname=?, ip_address=?, domain=?, url=?,
+        SET category=?, severity=?, hostname=?, ip_address=?, domain=?, url=?,
             hash_value=?, hash_type=?, filename=?, file_path=?, registry_key=?,
             command_line=?, email=?, user_account=?, notes=?,
-            updated_at=?, updated_by=?
+            user_agent=?, mitre_category=?, detection_rule=?, network_port=?,
+            network_protocol=?, updated_at=?, updated_by=?
         WHERE id=?
         """,
         (
-            fields_dict.get('case_name', ''),
+            fields_dict.get('category', ''),
             fields_dict.get('severity', 'Medium'),
             fields_dict.get('hostname', ''),
             fields_dict.get('ip_address', ''),
@@ -166,6 +177,11 @@ def update(ioc_id, fields_dict, updated_by, tag_names):
             fields_dict.get('email', ''),
             fields_dict.get('user_account', ''),
             fields_dict.get('notes', ''),
+            fields_dict.get('user_agent', ''),
+            fields_dict.get('mitre_category', ''),
+            fields_dict.get('detection_rule', ''),
+            fields_dict.get('network_port', ''),
+            fields_dict.get('network_protocol', ''),
             now, updated_by, ioc_id,
         ),
     )

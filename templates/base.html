@@ -40,6 +40,24 @@
             <i class="bi bi-shield-exclamation me-1"></i>IOCs
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link{% if request.blueprint == 'events' %} active{% endif %}"
+             href="{{ url_for('events.index') }}">
+            <i class="bi bi-calendar-event me-1"></i>Events
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if request.blueprint == 'tasks' %} active{% endif %}"
+             href="{{ url_for('tasks.index') }}">
+            <i class="bi bi-check2-square me-1"></i>Tasks
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if request.blueprint == 'timeline' %} active{% endif %}"
+             href="{{ url_for('timeline.index') }}">
+            <i class="bi bi-clock-history me-1"></i>Timeline
+          </a>
+        </li>
         {% if current_user.is_admin %}
         <li class="nav-item">
           <a class="nav-link{% if request.endpoint == 'admin.users' or request.endpoint == 'admin.create_user' %} active{% endif %}"
@@ -71,6 +89,12 @@
             <i class="bi bi-key me-1"></i>Password
           </a>
         </li>
+        <li class="nav-item me-2">
+          <a class="nav-link small{% if request.blueprint == 'settings' %} active{% endif %}"
+             href="{{ url_for('settings.index') }}" title="Settings">
+            <i class="bi bi-gear me-1"></i>Settings
+          </a>
+        </li>
         <li class="nav-item me-3">
           <a class="nav-link small" href="{{ url_for('auth.logout') }}">
             <i class="bi bi-box-arrow-right me-1"></i>Logout
@@ -80,6 +104,18 @@
         <li class="nav-item">
           <a class="btn btn-warning btn-sm text-dark" href="{{ url_for('iocs.new_ioc') }}">
             <i class="bi bi-plus-lg me-1"></i>New IOC
+          </a>
+        </li>
+        {% elif request.blueprint == 'events' %}
+        <li class="nav-item">
+          <a class="btn btn-info btn-sm text-dark" href="{{ url_for('events.new_event') }}">
+            <i class="bi bi-plus-lg me-1"></i>New Event
+          </a>
+        </li>
+        {% elif request.blueprint == 'tasks' %}
+        <li class="nav-item">
+          <a class="btn btn-primary btn-sm" href="{{ url_for('tasks.new_task') }}">
+            <i class="bi bi-plus-lg me-1"></i>New Task
           </a>
         </li>
         {% else %}
@@ -95,7 +131,7 @@
   </div>
 </nav>
 
-<div class="container-fluid px-4 py-3">
+<div class="container-fluid px-3 px-md-4 py-3" style="padding-bottom: calc(2rem + 0.75rem + env(safe-area-inset-bottom, 0px)) !important;">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="mt-2 mb-0">
@@ -117,5 +153,90 @@
         crossorigin="anonymous"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 {% block extra_js %}{% endblock %}
+
+{# ── Clock bar + timestamp tooltips ──────────────────────────────────────── #}
+{% if current_user.is_authenticated %}
+<div id="clock-bar"
+     class="fixed-bottom bg-dark border-top border-secondary d-flex align-items-center gap-0 px-3"
+     style="height:calc(2rem + env(safe-area-inset-bottom, 0px)); padding-bottom:env(safe-area-inset-bottom, 0px); z-index:1029; overflow-x:auto; overflow-y:hidden; white-space:nowrap; -webkit-overflow-scrolling:touch; font-size:0.75rem;">
+</div>
+
+<script>
+(function () {
+  const _TZ = {{ tz_list | tojson }};
+
+  /* ── helpers ── */
+  function _fmt(date, tz) {
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      }).format(date).replace(',', '');
+    } catch { return '—'; }
+  }
+
+  function _fmtTooltip(date, tz) {
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, timeZoneName: 'short'
+      }).format(date).replace(',', '');
+    } catch { return '—'; }
+  }
+
+  function _label(tz) {
+    return tz === 'UTC' ? 'UTC' : tz.split('/').pop().replace(/_/g, '\u00a0');
+  }
+
+  /* ── live clock ── */
+  const _bar = document.getElementById('clock-bar');
+  function _tick() {
+    if (!_bar) return;
+    const now = new Date();
+    _bar.innerHTML = _TZ.map((tz, i) =>
+      (i > 0 ? '<span style="color:#6c757d;margin:0 .6rem;">|</span>' : '') +
+      '<span style="color:#6c757d;" class="me-1">' + _label(tz) + ':</span>' +
+      '<span class="font-monospace" style="color:#0dcaf0;">' + _fmt(now, tz) + '</span>'
+    ).join('');
+  }
+  _tick();
+  setInterval(_tick, 1000);
+
+  /* ── timestamp tooltips ── */
+  function _initTooltips() {
+    document.querySelectorAll('[data-utc]').forEach(function (el) {
+      var raw = el.getAttribute('data-utc');
+      if (!raw) return;
+      var iso = (raw.endsWith('Z') || raw.includes('+')) ? raw : raw + 'Z';
+      var date = new Date(iso);
+      if (isNaN(date.getTime())) return;
+
+      var html = _TZ.map(function (tz) {
+        return '<span style="white-space:nowrap"><b>' + tz + '</b>: ' + _fmtTooltip(date, tz) + '</span>';
+      }).join('<br>');
+
+      el.setAttribute('data-bs-toggle', 'tooltip');
+      el.setAttribute('data-bs-placement', 'top');
+      el.setAttribute('data-bs-html', 'true');
+      el.setAttribute('title', html);
+      el.style.cursor = 'help';
+      el.style.borderBottom = '1px dotted rgba(255,255,255,0.35)';
+      new bootstrap.Tooltip(el, { trigger: 'hover focus', html: true });
+    });
+  }
+
+  /* Run after page settles so dynamically-added elements are in DOM */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initTooltips);
+  } else {
+    _initTooltips();
+  }
+})();
+</script>
+{% endif %}
 </body>
 </html>

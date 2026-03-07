@@ -18,7 +18,7 @@
   <h3 class="mb-0 text-light">
     <i class="bi bi-clock-history me-2"></i>Version History
     <span class="fs-6 text-secondary ms-2 fw-normal">IOC #{{ ioc.id }}
-      {% if ioc.case_name %} — {{ ioc.case_name }}{% endif %}
+      {% if ioc.category %} — {{ ioc.category }}{% endif %}
     </span>
   </h3>
 </div>
@@ -28,7 +28,7 @@
   <div class="card bg-dark border-warning border-opacity-25 mb-3">
     <div class="card-header border-warning border-opacity-25 d-flex align-items-center gap-2 flex-wrap">
       <span class="badge bg-secondary font-monospace">
-        {{ v.entry.edited_at[:16].replace('T', ' ') }} UTC
+        {{ v.entry.edited_at[:19] }}Z
       </span>
       <span class="text-secondary small">{{ v.entry.editor_name }}</span>
       {% if v.entry.change_summary %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Import Preview — {{ entity }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
+  <h4 class="mb-0 text-light font-monospace">
+    <i class="bi bi-table me-2"></i>Import Preview — {{ entity }}
+  </h4>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ cancel_url }}">
+    <i class="bi bi-x-lg me-1"></i>Cancel
+  </a>
+</div>
+
+{% set error_count = namespace(n=0) %}
+{% for row in rows %}{% if row._error is defined and row._error %}{% set error_count.n = error_count.n + 1 %}{% endif %}{% endfor %}
+{% set valid_count = rows | length - error_count.n %}
+
+<div class="alert {% if error_count.n %}alert-warning{% else %}alert-success{% endif %} border-secondary mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <i class="bi {% if error_count.n %}bi-exclamation-triangle{% else %}bi-check-circle{% endif %} fs-5"></i>
+    <div>
+      <strong>{{ rows | length }}</strong> row{{ 's' if rows | length != 1 else '' }} parsed.
+      <strong class="text-success">{{ valid_count }}</strong> valid,
+      <strong class="{% if error_count.n %}text-warning{% endif %}">{{ error_count.n }}</strong> with errors (will be skipped).
+    </div>
+  </div>
+</div>
+
+{% if rows %}
+<div class="table-responsive mb-4" style="max-height: 480px; overflow-y: auto;">
+  <table class="table table-dark table-sm table-bordered table-hover font-monospace small mb-0">
+    <thead class="sticky-top">
+      <tr>
+        <th class="text-secondary">#</th>
+        {% for h in headers %}
+        <th class="text-secondary">{{ h }}</th>
+        {% endfor %}
+        <th class="text-secondary">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="{% if row._error is defined and row._error %}table-danger{% endif %}">
+        <td class="text-secondary">{{ loop.index }}</td>
+        {% for h in headers %}
+        <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+            title="{{ row.get(h, '') }}">
+          {{ row.get(h, '') }}
+        </td>
+        {% endfor %}
+        <td>
+          {% if row._error is defined and row._error %}
+          <span class="badge bg-danger" title="{{ row._error }}">
+            <i class="bi bi-x-circle me-1"></i>Error
+          </span>
+          {% else %}
+          <span class="badge bg-success"><i class="bi bi-check me-1"></i>OK</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if valid_count > 0 %}
+<form method="post" action="{{ confirm_url }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <textarea name="rows_json" class="d-none">{{ rows_json }}</textarea>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-success">
+      <i class="bi bi-cloud-upload me-1"></i>Import {{ valid_count }} valid row{{ 's' if valid_count != 1 else '' }}
+    </button>
+    <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
+{% else %}
+<div class="alert alert-danger border-secondary">
+  No valid rows to import. <a href="{{ cancel_url }}" class="alert-link">Go back</a>.
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center text-secondary py-5">
+  <i class="bi bi-table fs-1 d-block mb-2"></i>
+  No rows found in the uploaded file.
+  <a href="{{ cancel_url }}" class="d-block mt-2">Go back</a>
+</div>
+{% endif %}
+{% endblock %}

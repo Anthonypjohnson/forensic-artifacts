@@ -42,10 +42,10 @@
         <i class="bi bi-geo-alt me-1"></i>Location
       </div>
       <div class="card-body position-relative">
-        <pre class="text-success font-monospace mb-0 location-block" id="location-text">{{ artifact.location }}</pre>
+        <pre class="text-success font-monospace mb-0 location-block" id="field-location">{{ artifact.location }}</pre>
         <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
-                id="copy-btn" title="Copy to clipboard" onclick="copyLocation()">
-          <i class="bi bi-clipboard" id="copy-icon"></i>
+                title="Copy to clipboard" onclick="copyField('field-location', this)">
+          <i class="bi bi-clipboard"></i>
         </button>
       </div>
     </div>
@@ -54,8 +54,12 @@
       <div class="card-header border-secondary text-secondary small">
         <i class="bi bi-tools me-1"></i>Tools
       </div>
-      <div class="card-body">
-        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.tools }}</p>
+      <div class="card-body position-relative">
+        <p class="mb-0 text-light" id="field-tools" style="white-space: pre-wrap;">{{ artifact.tools }}</p>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                title="Copy to clipboard" onclick="copyField('field-tools', this)">
+          <i class="bi bi-clipboard"></i>
+        </button>
       </div>
     </div>
 
@@ -63,8 +67,12 @@
       <div class="card-header border-secondary text-secondary small">
         <i class="bi bi-list-ol me-1"></i>Instructions
       </div>
-      <div class="card-body">
-        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.instructions }}</p>
+      <div class="card-body position-relative">
+        <p class="mb-0 text-light" id="field-instructions" style="white-space: pre-wrap;">{{ artifact.instructions }}</p>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                title="Copy to clipboard" onclick="copyField('field-instructions', this)">
+          <i class="bi bi-clipboard"></i>
+        </button>
       </div>
     </div>
 
@@ -72,8 +80,12 @@
       <div class="card-header border-secondary text-secondary small">
         <i class="bi bi-lightbulb me-1"></i>Significance
       </div>
-      <div class="card-body">
-        <p class="mb-0 text-light" style="white-space: pre-wrap;">{{ artifact.significance }}</p>
+      <div class="card-body position-relative">
+        <p class="mb-0 text-light" id="field-significance" style="white-space: pre-wrap;">{{ artifact.significance }}</p>
+        <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                title="Copy to clipboard" onclick="copyField('field-significance', this)">
+          <i class="bi bi-clipboard"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -91,7 +103,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Created at</span>
-          <span class="text-light small">{{ artifact.created_at[:10] }}</span>
+          <span class="text-light small" data-utc="{{ artifact.created_at }}">{{ artifact.created_at[:19] }}Z</span>
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Last updated by</span>
@@ -99,7 +111,7 @@
         </li>
         <li class="list-group-item bg-dark border-secondary d-flex justify-content-between">
           <span class="text-secondary small">Last updated at</span>
-          <span class="text-light small">{{ artifact.updated_at[:16].replace('T', ' ') }}</span>
+          <span class="text-light small" data-utc="{{ artifact.updated_at }}">{{ artifact.updated_at[:19] }}Z</span>
         </li>
       </ul>
     </div>
@@ -124,7 +136,7 @@
                       type="button"
                       data-bs-toggle="collapse"
                       data-bs-target="#hist-{{ loop.index }}">
-                <span class="me-2 text-success">{{ entry.changed_at[:10] }}</span>
+                <span class="me-2 text-success">{{ entry.changed_at[:19] }}Z</span>
                 <span class="text-secondary me-2">{{ entry.editor_name }}</span>
                 <span class="text-muted fst-italic text-truncate" style="max-width: 120px;">
                   {{ entry.change_summary }}
@@ -142,7 +154,7 @@
                 </p>
                 <p class="mb-0 text-secondary">
                   <strong class="text-light">Time:</strong>
-                  {{ entry.changed_at[:16].replace('T', ' ') }} UTC
+                  {{ entry.changed_at[:19] }}Z
                 </p>
                 {% if entry.snapshot %}
                 <hr class="border-secondary my-2">
@@ -163,15 +175,3 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-function copyLocation() {
-  const text = document.getElementById('location-text').innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const icon = document.getElementById('copy-icon');
-    icon.className = 'bi bi-clipboard-check text-success';
-    setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 2000);
-  });
-}
-</script>
-{% endblock %}

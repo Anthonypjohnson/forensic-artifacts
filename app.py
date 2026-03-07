@@ -1,3 +1,4 @@
+import os
 import sys
 import getpass
 import click
@@ -38,12 +39,30 @@ def create_app(config_class=Config):
     from routes.api import api_bp
     from routes.admin import admin_bp
     from routes.iocs import iocs_bp
+    from routes.events import events_bp
+    from routes.tasks import tasks_bp
+    from routes.timeline import timeline_bp
+    from routes.settings import settings_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(artifacts_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(iocs_bp)
+    app.register_blueprint(events_bp)
+    app.register_blueprint(tasks_bp)
+    app.register_blueprint(timeline_bp)
+    app.register_blueprint(settings_bp)
+
+    @app.context_processor
+    def inject_timezone_list():
+        try:
+            from models.settings import get_timezone_list
+            return {"tz_list": get_timezone_list()}
+        except Exception:
+            return {"tz_list": ["UTC"]}
+
+    os.makedirs(os.path.join("static", "uploads", "events"), exist_ok=True)
 
     # Security headers on every response
     @app.after_request

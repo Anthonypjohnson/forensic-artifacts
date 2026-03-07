@@ -1,3 +1,5 @@
+import json as _json
+
 import bleach
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
@@ -6,6 +8,7 @@ from forms.artifact_form import ArtifactForm
 from models import artifact as artifact_model
 from models import history as history_model
 from models import tag as tag_model
+from utils.csv_io import make_csv_response, make_template_csv, parse_csv_upload
 
 artifacts_bp = Blueprint("artifacts", __name__)
 
@@ -202,3 +205,113 @@ def delete_artifact(artifact_id):
         return redirect(url_for("artifacts.index"))
 
     return render_template("confirm_delete.html", artifact=artifact)
+
+
+# ── CSV Export / Import ───────────────────────────────────────────────────────
+
+_CSV_HEADERS = [
+    "id", "name", "location", "tools", "instructions", "significance",
+    "tags", "created_at", "updated_at", "created_by", "updated_by",
+]
+_CSV_EXAMPLE = {
+    "name": "Windows Event Logs",
+    "location": r"C:\Windows\System32\winevt\Logs",
+    "tools": "Event Viewer, Chainsaw, Hayabusa",
+    "instructions": "Collect .evtx files from the Logs directory",
+    "significance": "Primary Windows logging mechanism",
+    "tags": "windows; logs",
+}
+
+
+@artifacts_bp.route("/artifacts/export")
+@login_required
+def export_csv():
+    if request.args.get("template"):
+        return make_template_csv(_CSV_HEADERS, _CSV_EXAMPLE, "artifacts_template.csv")
+    search = request.args.get("q", "").strip()
+    tag_filter = request.args.get("tag", "").strip()
+    artifacts = artifact_model.get_all(
+        search=search or None, tag_filter=tag_filter or None
+    )
+    rows = []
+    for a in artifacts:
+        row = dict(a)
+        row["tags"] = "; ".join(t["name"] for t in a["tags"])
+        rows.append(row)
+    return make_csv_response(_CSV_HEADERS, rows, "artifacts.csv")
+
+
+@artifacts_bp.route("/artifacts/import", methods=["GET", "POST"])
+@login_required
+def import_csv():
+    if request.method == "GET":
+        return render_template(
+            "csv_import.html",
+            entity="Artifacts",
+            import_action=url_for("artifacts.import_csv"),
+            export_template_url=url_for("artifacts.export_csv", template=1),
+            cancel_url=url_for("artifacts.index"),
+        )
+    f = request.files.get("csv_file")
+    if not f or not f.filename:
+        flash("No file selected.", "danger")
+        return redirect(url_for("artifacts.import_csv"))
+    rows, err = parse_csv_upload(f)
+    if err:
+        flash(err, "danger")
+        return redirect(url_for("artifacts.import_csv"))
+    for row in rows:
+        if not row.get("name", "").strip():
+            row["_error"] = "Missing required field: name"
+    headers = [h for h in (rows[0].keys() if rows else _CSV_HEADERS) if not h.startswith("_")]
+    valid_count = sum(1 for r in rows if not r.get("_error"))
+    return render_template(
+        "csv_import_preview.html",
+        entity="Artifacts",
+        rows=rows,
+        headers=headers,
+        rows_json=_json.dumps(rows),
+        confirm_url=url_for("artifacts.import_csv_confirm"),
+        cancel_url=url_for("artifacts.index"),
+        valid_count=valid_count,
+    )
+
+
+@artifacts_bp.route("/artifacts/import/confirm", methods=["POST"])
+@login_required
+def import_csv_confirm():
+    rows_json = request.form.get("rows_json", "[]")
+    try:
+        rows = _json.loads(rows_json)
+        if not isinstance(rows, list):
+            raise ValueError("Expected a list")
+    except (TypeError, ValueError) as exc:
+        flash(f"Invalid import data: {exc}", "danger")
+        return redirect(url_for("artifacts.index"))
+    editor = current_user.username
+    count = 0
+    for row in rows:
+        if row.get("_error"):
+            continue
+        name = _sanitize(row.get("name", ""))
+        if not name:
+            continue
+        tags = [_sanitize(t.strip()) for t in row.get("tags", "").split(";") if t.strip()]
+        artifact_id = artifact_model.create(
+            name=name,
+            location=_sanitize(row.get("location", "")),
+            tools=_sanitize(row.get("tools", "")),
+            instructions=_sanitize(row.get("instructions", "")),
+            significance=_sanitize(row.get("significance", "")),
+            created_by=editor,
+            tags=tags,
+        )
+        history_model.insert_history(
+            artifact_id=artifact_id,
+            editor_name=editor,
+            change_summary="Imported via CSV",
+            artifact_snapshot={},
+        )
+        count += 1
+    flash(f"Imported {count} artifact(s).", "success" if count else "warning")
+    return redirect(url_for("artifacts.index"))

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Settings — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+  <h4 class="mb-0 text-light">
+    <i class="bi bi-gear me-2"></i>Settings
+  </h4>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+
+    <form method="post" action="{{ url_for('settings.index') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="card bg-dark border-secondary mb-4">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-globe me-1"></i>Timezones of Interest
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small mb-3">
+            Enter one <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones"
+            class="text-secondary" target="_blank" rel="noopener">IANA timezone name</a>
+            per line. These are displayed in the clock bar at the bottom of every page and
+            as hover tooltips on timestamps. UTC is always included.
+            Maximum {{ 20 }} entries.
+          </p>
+          <div class="mb-3">
+            <textarea class="form-control bg-dark border-secondary text-light font-monospace"
+                      id="timezones" name="timezones" rows="10"
+                      placeholder="UTC&#10;America/New_York&#10;Europe/London&#10;Asia/Tokyo">{{ tz_raw }}</textarea>
+            <div class="form-text text-secondary mt-1">
+              <i class="bi bi-info-circle me-1"></i>
+              Examples: <code>America/New_York</code>, <code>Europe/London</code>,
+              <code>Asia/Tokyo</code>, <code>Australia/Sydney</code>
+            </div>
+          </div>
+
+          <div id="tz-validation" class="mb-3 small"></div>
+
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-floppy me-1"></i>Save Settings
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small">
+        <i class="bi bi-clock me-1"></i>Common Timezone Reference
+      </div>
+      <div class="card-body small text-secondary">
+        <div class="row row-cols-1 row-cols-md-2 g-1">
+          {% for tz in [
+            ('UTC', 'UTC / Zulu'),
+            ('America/New_York', 'US Eastern'),
+            ('America/Chicago', 'US Central'),
+            ('America/Denver', 'US Mountain'),
+            ('America/Los_Angeles', 'US Pacific'),
+            ('Europe/London', 'UK / GMT / BST'),
+            ('Europe/Paris', 'CET / Central Europe'),
+            ('Europe/Moscow', 'Moscow'),
+            ('Asia/Dubai', 'Gulf / UAE'),
+            ('Asia/Kolkata', 'India'),
+            ('Asia/Shanghai', 'China'),
+            ('Asia/Tokyo', 'Japan'),
+            ('Australia/Sydney', 'AEST / Sydney'),
+            ('Pacific/Auckland', 'New Zealand'),
+          ] %}
+          <div class="col d-flex align-items-baseline gap-1 flex-wrap">
+            <code class="text-light font-monospace">{{ tz[0] }}</code>
+            <span class="text-secondary">— {{ tz[1] }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const area = document.getElementById('timezones');
+  const out  = document.getElementById('tz-validation');
+  if (!area) return;
+
+  function validate() {
+    const lines = area.value.split('\n').map(l => l.trim()).filter(Boolean);
+    const errors = [];
+    lines.forEach(tz => {
+      try { new Intl.DateTimeFormat('en', { timeZone: tz }); }
+      catch { errors.push(tz); }
+    });
+    if (errors.length) {
+      out.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Unrecognised: ' +
+        errors.map(e => `<code>${e}</code>`).join(', ') + '</span>';
+    } else if (lines.length) {
+      out.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>' +
+        lines.length + ' timezone' + (lines.length > 1 ? 's' : '') + ' valid</span>';
+    } else {
+      out.innerHTML = '';
+    }
+  }
+
+  area.addEventListener('input', validate);
+  validate();
+})();
+</script>
+{% endblock %}

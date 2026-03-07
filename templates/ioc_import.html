@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Import STIX — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
+  <h4 class="mb-0 text-warning font-monospace">
+    <i class="bi bi-upload me-2"></i>Import STIX File
+  </h4>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('iocs.index') }}">
+    <i class="bi bi-arrow-left me-1"></i>Back to IOCs
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card bg-dark border-secondary">
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('iocs.import_stix') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-4">
+            <label for="stix_file" class="form-label text-light">STIX File</label>
+            <input class="form-control bg-dark border-secondary text-light"
+                   type="file" id="stix_file" name="stix_file"
+                   accept=".json,.xml" required>
+            <div class="form-text text-secondary mt-2">
+              <i class="bi bi-info-circle me-1"></i>
+              Supported formats:
+              <strong class="text-light">STIX 2.0 / 2.1 JSON</strong> and
+              <strong class="text-light">STIX 1.x XML</strong>.
+              Maximum file size: <strong class="text-light">5 MB</strong>.
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-warning text-dark">
+              <i class="bi bi-search me-1"></i>Parse File
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mt-3">
+      <div class="card-body small text-secondary">
+        <p class="mb-2"><i class="bi bi-file-earmark-code me-1"></i><strong class="text-light">STIX 2.x JSON</strong></p>
+        <p class="mb-3">Upload a STIX bundle (<code>.json</code>) containing <code>"type": "indicator"</code> objects.
+          Patterns are parsed for IPs, domains, URLs, hashes, file paths, registry keys, and more.</p>
+
+        <p class="mb-2"><i class="bi bi-file-earmark-code me-1"></i><strong class="text-light">STIX 1.x XML</strong></p>
+        <p class="mb-0">Upload a STIX 1.x package (<code>.xml</code>) with CybOX
+          <code>&lt;Indicator&gt;</code> elements. Supported CybOX types include
+          Address, DomainName, URI, Email, File, Process, RegistryKey, UserAccount, and Hostname.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

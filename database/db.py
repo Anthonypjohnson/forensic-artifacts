@@ -11,6 +11,7 @@ def get_db():
         g.db = sqlite3.connect(
             current_app.config["DATABASE_PATH"],
             detect_types=sqlite3.PARSE_DECLTYPES,
+            timeout=30,
         )
         g.db.row_factory = sqlite3.Row
         # WAL mode for concurrent read/write; foreign keys enforced
@@ -28,6 +29,13 @@ def close_db(e=None):
 def init_db():
     """Create tables from schema.sql if they don't exist."""
     db = get_db()
+    # Fast read-only check: if the users table already exists, the schema has
+    # already been applied by another worker — skip the write entirely.
+    row = db.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    if row:
+        return
     with open(SCHEMA_PATH, "r") as f:
         db.executescript(f.read())
     db.commit()

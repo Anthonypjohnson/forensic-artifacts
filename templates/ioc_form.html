@@ -49,8 +49,9 @@
         </div>
         <div class="card-body">
           <div class="row g-3">
-            <div class="col-sm-8">{{ field_row(form.case_name) }}</div>
-            <div class="col-sm-4">{{ field_row(form.severity) }}</div>
+            <div class="col-sm-5">{{ field_row(form.category) }}</div>
+            <div class="col-sm-4">{{ field_row(form.mitre_category) }}</div>
+            <div class="col-sm-3">{{ field_row(form.severity) }}</div>
           </div>
         </div>
       </div>
@@ -67,6 +68,11 @@
           </div>
           {{ field_row(form.url, mono=true) }}
           {{ field_row(form.email, mono=true) }}
+          {{ field_row(form.user_agent, mono=true) }}
+          <div class="row g-3">
+            <div class="col-sm-4">{{ field_row(form.network_port, mono=true) }}</div>
+            <div class="col-sm-8">{{ field_row(form.network_protocol) }}</div>
+          </div>
           {% if form.hostname.errors %}
           <div class="alert alert-danger py-1 small">
             {% for error in form.hostname.errors %}{{ error }}{% endfor %}
@@ -121,6 +127,16 @@
             <div class="invalid-feedback d-block text-danger small">{{ error }}</div>
             {% endfor %}
           </div>
+        </div>
+      </div>
+
+      {# Card — Detection Rule #}
+      <div class="card bg-dark border-secondary mb-3">
+        <div class="card-header border-secondary text-secondary small">
+          <i class="bi bi-shield-check me-1"></i>Detection Rule
+        </div>
+        <div class="card-body">
+          {{ field_row(form.detection_rule, mono=true, rows=6) }}
         </div>
       </div>
 

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Import {{ entity }} — ForensicArtifacts{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
+  <h4 class="mb-0 text-light font-monospace">
+    <i class="bi bi-upload me-2"></i>Import {{ entity }} via CSV
+  </h4>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ cancel_url }}">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card bg-dark border-secondary">
+      <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data" action="{{ import_action }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="mb-4">
+            <label for="csv_file" class="form-label text-light">CSV File</label>
+            <input class="form-control bg-dark border-secondary text-light"
+                   type="file" id="csv_file" name="csv_file"
+                   accept=".csv" required>
+            <div class="form-text text-secondary mt-2">
+              <i class="bi bi-info-circle me-1"></i>
+              Upload a <strong class="text-light">.csv</strong> file.
+              Maximum file size: <strong class="text-light">5 MB</strong>.
+              Tags must be separated by <code>; </code> within their cell.
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-table me-1"></i>Upload &amp; Preview
+            </button>
+            <a href="{{ export_template_url }}" class="btn btn-outline-secondary">
+              <i class="bi bi-download me-1"></i>Download Template CSV
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card bg-dark border-secondary mt-3">
+      <div class="card-body small text-secondary">
+        <p class="mb-2">
+          <i class="bi bi-lightbulb me-1"></i>
+          <strong class="text-light">Tips</strong>
+        </p>
+        <ul class="mb-0 ps-3">
+          <li>Download the template to see the expected column format with an example row.</li>
+          <li>The <code>id</code> column is always ignored — new IDs are assigned automatically.</li>
+          <li>You will see a preview before any data is saved.</li>
+          <li>Rows with validation errors are highlighted and will be skipped on import.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -17,8 +17,8 @@
         {% endfor %}
         {% if not ns.label %}{% set ns.label = ioc.notes[:80] %}{% endif %}
         <p class="text-light fw-bold fs-6 font-monospace mb-1">{{ ns.label }}</p>
-        {% if ioc.case_name %}
-        <p class="text-secondary small mb-3">Case: {{ ioc.case_name }}</p>
+        {% if ioc.category %}
+        <p class="text-secondary small mb-3">Category: {{ ioc.category }}</p>
         {% endif %}
         <p class="text-secondary small mb-4">
           This will also delete all edit history for this IOC. This action cannot be undone.

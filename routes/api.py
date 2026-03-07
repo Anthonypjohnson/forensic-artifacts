@@ -4,6 +4,8 @@ from flask_login import login_required
 from models import artifact as artifact_model
 from models import tag as tag_model
 from models import ioc as ioc_model
+from models import event as event_model
+from models import task as task_model
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -40,15 +42,15 @@ def list_tags():
 @login_required
 def search_iocs():
     search = request.args.get("q", "").strip() or None
-    case_filter = request.args.get("case", "").strip() or None
-    iocs = ioc_model.get_all(search=search, case_filter=case_filter)
+    category_filter = request.args.get("category", "").strip() or None
+    iocs = ioc_model.get_all(search=search, category_filter=category_filter)
 
     result = []
     for ioc in iocs:
         _, primary_val = ioc_model.get_primary_indicator(ioc)
         result.append({
             "id": ioc["id"],
-            "case_name": ioc["case_name"],
+            "category": ioc["category"],
             "severity": ioc["severity"],
             "primary_indicator": primary_val[:120] + "…" if len(primary_val) > 120 else primary_val,
             "updated_at": ioc["updated_at"],
@@ -63,3 +65,48 @@ def search_iocs():
 def list_ioc_tags():
     tags = ioc_model.get_all_tags_with_counts()
     return jsonify(tags)
+
+
+@api_bp.route("/tasks")
+@login_required
+def list_tasks():
+    tasks = task_model.get_all()
+    return jsonify([
+        {
+            "id": t["id"],
+            "title": t["title"],
+            "status": t["status"],
+            "priority": t["priority"],
+            "assignee": t["assignee"],
+        }
+        for t in tasks
+    ])
+
+
+@api_bp.route("/events")
+@login_required
+def search_events():
+    search = request.args.get("q", "").strip() or None
+    ioc_filter = request.args.get("ioc", "").strip()
+    tag_filter = request.args.get("tag", "").strip() or None
+
+    events = event_model.get_all(
+        search=search,
+        ioc_filter=int(ioc_filter) if ioc_filter.isdigit() else None,
+        tag_filter=tag_filter,
+    )
+
+    result = []
+    for ev in events:
+        result.append({
+            "id": ev["id"],
+            "event_datetime": ev["event_datetime"] or "",
+            "system": ev["system"] or "",
+            "account": ev["account"] or "",
+            "event_category": ev["event_category"] or "",
+            "ioc_id": ev["ioc_id"],
+            "show_on_timeline": bool(ev["show_on_timeline"]),
+            "high_level_source": ev["high_level_source"] or "",
+            "tags": [t["name"] for t in ev["tags"]],
+        })
+    return jsonify(result)

@@ -6,9 +6,19 @@
   <h4 class="mb-0 text-success font-monospace">
     <i class="bi bi-collection me-2"></i>Artifact Library
   </h4>
-  <a class="btn btn-success btn-sm" href="{{ url_for('artifacts.new_artifact') }}">
-    <i class="bi bi-plus-lg me-1"></i>New Artifact
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('artifacts.export_csv', q=search or None, tag=tag_filter or None) }}"
+       class="btn btn-outline-success btn-sm">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+    <a href="{{ url_for('artifacts.import_csv') }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-upload me-1"></i>Import
+    </a>
+    <a class="btn btn-success btn-sm" href="{{ url_for('artifacts.new_artifact') }}">
+      <i class="bi bi-plus-lg me-1"></i>New Artifact
+    </a>
+  </div>
 </div>
 
 {# Search bar #}

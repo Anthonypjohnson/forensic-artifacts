@@ -6,9 +6,22 @@
   <h4 class="mb-0 text-warning font-monospace">
     <i class="bi bi-shield-exclamation me-2"></i>Indicators of Compromise
   </h4>
-  <a class="btn btn-warning btn-sm text-dark" href="{{ url_for('iocs.new_ioc') }}">
-    <i class="bi bi-plus-lg me-1"></i>New IOC
-  </a>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('iocs.export_csv', q=search or None, category=category_filter or None, tag=tag_filter or None) }}"
+       class="btn btn-outline-success btn-sm">
+      <i class="bi bi-download me-1"></i>Export CSV
+    </a>
+    <a href="{{ url_for('iocs.import_csv') }}"
+       class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-upload me-1"></i>Import CSV
+    </a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('iocs.import_stix') }}">
+      <i class="bi bi-upload me-1"></i>Import STIX
+    </a>
+    <a class="btn btn-warning btn-sm text-dark" href="{{ url_for('iocs.new_ioc') }}">
+      <i class="bi bi-plus-lg me-1"></i>New IOC
+    </a>
+  </div>
 </div>
 
 {# Search bar #}
@@ -20,35 +33,35 @@
     <input type="text" class="form-control bg-dark border-secondary text-light"
            id="ioc-search-input" name="q" value="{{ search }}"
            placeholder="Search IOCs…" autocomplete="off">
-    {% if case_filter %}
-    <input type="hidden" name="case" value="{{ case_filter }}">
+    {% if category_filter %}
+    <input type="hidden" name="category" value="{{ category_filter }}">
     {% endif %}
     {% if tag_filter %}
     <input type="hidden" name="tag" value="{{ tag_filter }}">
     {% endif %}
     {% if search %}
     <a class="btn btn-outline-secondary"
-       href="{{ url_for('iocs.index', case=case_filter or None, tag=tag_filter or None) }}">
+       href="{{ url_for('iocs.index', category=category_filter or None, tag=tag_filter or None) }}">
       <i class="bi bi-x-lg"></i>
     </a>
     {% endif %}
   </div>
 </form>
 
-{# Case filter pills #}
-{% if all_cases %}
+{# Category filter pills #}
+{% if all_categories %}
 <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
-  <span class="text-secondary small"><i class="bi bi-folder2 me-1"></i>Case:</span>
+  <span class="text-secondary small"><i class="bi bi-folder2 me-1"></i>Category:</span>
   <a href="{{ url_for('iocs.index', q=search or None, tag=tag_filter or None) }}"
      class="badge rounded-pill text-decoration-none
-            {% if not case_filter %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+            {% if not category_filter %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
     All
   </a>
-  {% for case in all_cases %}
-  <a href="{{ url_for('iocs.index', case=case, q=search or None, tag=tag_filter or None) }}"
+  {% for cat in all_categories %}
+  <a href="{{ url_for('iocs.index', category=cat, q=search or None, tag=tag_filter or None) }}"
      class="badge rounded-pill text-decoration-none
-            {% if case_filter == case %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-    {{ case }}
+            {% if category_filter == cat %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+    {{ cat }}
   </a>
   {% endfor %}
 </div>
@@ -58,13 +71,13 @@
 {% if all_tags %}
 <div class="mb-4 d-flex flex-wrap gap-2 align-items-center">
   <span class="text-secondary small"><i class="bi bi-tags me-1"></i>Tag:</span>
-  <a href="{{ url_for('iocs.index', q=search or None, case=case_filter or None) }}"
+  <a href="{{ url_for('iocs.index', q=search or None, category=category_filter or None) }}"
      class="badge rounded-pill text-decoration-none
             {% if not tag_filter %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
     All
   </a>
   {% for tag in all_tags %}
-  <a href="{{ url_for('iocs.index', tag=tag.name, q=search or None, case=case_filter or None) }}"
+  <a href="{{ url_for('iocs.index', tag=tag.name, q=search or None, category=category_filter or None) }}"
      class="badge rounded-pill text-decoration-none
             {% if tag_filter == tag.name %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
     {{ tag.name }}
@@ -83,7 +96,7 @@
     <div class="text-center text-secondary py-5">
       <i class="bi bi-shield display-4"></i>
       <p class="mt-3">No IOCs found.
-        {% if search or case_filter or tag_filter %}
+        {% if search or category_filter or tag_filter %}
           <a href="{{ url_for('iocs.index') }}">Clear filters</a>
         {% else %}
           <a href="{{ url_for('iocs.new_ioc') }}">Add the first one.</a>
