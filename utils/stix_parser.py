@@ -7,7 +7,7 @@ Extra key '_tags' carries tag names (list[str]).
 
 import json
 import re
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 MAX_FILE_BYTES = 5 * 1024 * 1024  # 5 MB
 

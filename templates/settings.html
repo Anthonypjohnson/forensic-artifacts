@@ -88,6 +88,10 @@
   const out  = document.getElementById('tz-validation');
   if (!area) return;
 
+  function _esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function validate() {
     const lines = area.value.split('\n').map(l => l.trim()).filter(Boolean);
     const errors = [];
@@ -97,7 +101,7 @@
     });
     if (errors.length) {
       out.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Unrecognised: ' +
-        errors.map(e => `<code>${e}</code>`).join(', ') + '</span>';
+        errors.map(e => `<code>${_esc(e)}</code>`).join(', ') + '</span>';
     } else if (lines.length) {
       out.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>' +
         lines.length + ' timezone' + (lines.length > 1 ? 's' : '') + ' valid</span>';

@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from argon2 import PasswordHasher
@@ -62,9 +63,11 @@ def login():
         logger.info("Successful login: username=%r ip=%s", username, remote_ip)
 
         next_page = request.args.get("next")
-        # Guard against open redirect
-        if next_page and next_page.startswith("/") and not next_page.startswith("//"):
-            return redirect(next_page)
+        # Guard against open redirect: only allow relative paths (no scheme, no netloc)
+        if next_page:
+            parsed = urlparse(next_page)
+            if not parsed.scheme and not parsed.netloc:
+                return redirect(next_page)
         return redirect(url_for("artifacts.index"))
 
     return render_template("auth/login.html", form=form)
