@@ -32,6 +32,14 @@ A self-hosted knowledge base for forensic artifacts and indicators of compromise
 | Frontend | Bootstrap 5.3 dark theme |
 | Reverse proxy | nginx (Docker sidecar) |
 
+## Images
+<img width="916" height="496" alt="Screenshot 2026-03-07 at 8 36 19 AM" src="https://github.com/user-attachments/assets/d927ef5a-d78d-456c-985f-21b34b99bfdd" />
+<img width="910" height="565" alt="Screenshot 2026-03-07 at 8 36 09 AM" src="https://github.com/user-attachments/assets/f735ba7a-9b1f-49b5-b1f0-57df9b12d201" />
+<img width="916" height="350" alt="Screenshot 2026-03-07 at 8 35 58 AM" src="https://github.com/user-attachments/assets/dfa7a8f4-e242-4b0d-8cb3-e31c76d4e9b1" />
+<img width="918" height="284" alt="Screenshot 2026-03-07 at 8 35 47 AM" src="https://github.com/user-attachments/assets/1c0904de-b211-4a9c-9f62-4d857b16e807" />
+<img width="919" height="353" alt="Screenshot 2026-03-07 at 8 35 23 AM" src="https://github.com/user-attachments/assets/47e3049b-2d70-41e4-8fc4-12e1251cc290" />
+
+
 ## Quick Start
 
 ### Prerequisites
