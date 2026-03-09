@@ -40,11 +40,27 @@
   function _tick() {
     if (!_bar) return;
     var now = new Date();
-    _bar.innerHTML = _TZ.map(function (tz, i) {
-      return (i > 0 ? '<span style="color:#6c757d;margin:0 .6rem;">|</span>' : '') +
-        '<span style="color:#6c757d;" class="me-1">' + _label(tz) + ':</span>' +
-        '<span class="font-monospace" style="color:#0dcaf0;">' + _fmt(now, tz) + '</span>';
-    }).join('');
+    var frag = document.createDocumentFragment();
+    _TZ.forEach(function (tz, i) {
+      if (i > 0) {
+        var sep = document.createElement('span');
+        sep.style.cssText = 'color:#6c757d;margin:0 .6rem;';
+        sep.textContent = '|';
+        frag.appendChild(sep);
+      }
+      var lbl = document.createElement('span');
+      lbl.style.color = '#6c757d';
+      lbl.className = 'me-1';
+      lbl.textContent = _label(tz) + ':';
+      frag.appendChild(lbl);
+      var val = document.createElement('span');
+      val.className = 'font-monospace';
+      val.style.color = '#0dcaf0';
+      val.textContent = _fmt(now, tz);
+      frag.appendChild(val);
+    });
+    _bar.textContent = '';
+    _bar.appendChild(frag);
   }
   _tick();
   setInterval(_tick, 1000);
