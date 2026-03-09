@@ -1,10 +1,10 @@
 import logging
-from urllib.parse import urlparse
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
 
+from extensions import limiter
 from forms.auth_form import LoginForm, ChangePasswordForm
 from models import user as user_model
 
@@ -14,6 +14,7 @@ ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("artifacts.index"))
@@ -63,11 +64,9 @@ def login():
         logger.info("Successful login: username=%r ip=%s", username, remote_ip)
 
         next_page = request.args.get("next")
-        # Guard against open redirect: only allow relative paths (no scheme, no netloc)
-        if next_page:
-            parsed = urlparse(next_page)
-            if not parsed.scheme and not parsed.netloc:
-                return redirect(next_page)
+        # Guard against open redirect: require exactly one leading slash (no scheme, no //host)
+        if next_page and next_page.startswith("/") and not next_page.startswith("//"):
+            return redirect(next_page)
         return redirect(url_for("artifacts.index"))
 
     return render_template("auth/login.html", form=form)

@@ -8,6 +8,7 @@ from flask_login import LoginManager
 
 from config import Config
 from database import db as database
+from extensions import limiter
 from middleware.ip_whitelist import SilentDropMiddleware
 
 
@@ -27,6 +28,7 @@ def create_app(config_class=Config):
     # Extensions
     csrf.init_app(app)
     login_manager.init_app(app)
+    limiter.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Please log in to access this page."
     login_manager.login_message_category = "warning"
@@ -71,13 +73,15 @@ def create_app(config_class=Config):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; "
             "style-src 'self' 'unsafe-inline'; "
             "font-src 'self'; "
             "img-src 'self' data:; "
             "connect-src 'self';"
         )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         return response
 
     # Error handlers

@@ -38,10 +38,16 @@ class Config:
     @classmethod
     def warn_if_default_secret(cls):
         if cls.SECRET_KEY == "CHANGE_ME_generate_a_real_key":
+            if cls.FLASK_ENV != "development":
+                raise RuntimeError(
+                    "SECRET_KEY is set to the default placeholder value. "
+                    "Generate a real key with: "
+                    "python3 -c \"import secrets; print(secrets.token_hex(32))\" "
+                    "and set it in your .env file before starting in production."
+                )
             import warnings
             warnings.warn(
                 "WARNING: SECRET_KEY is set to the default placeholder. "
-                "Generate a real key with: python3 -c \"import secrets; print(secrets.token_hex(32))\" "
-                "and set it in your .env file.",
+                "Generate a real key before deploying to production.",
                 stacklevel=2,
             )

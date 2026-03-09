@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
 
+from extensions import limiter
 from models import artifact as artifact_model
 from models import tag as tag_model
 from models import ioc as ioc_model
@@ -12,6 +13,7 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 
 @api_bp.route("/artifacts")
 @login_required
+@limiter.limit("20 per minute")
 def search_artifacts():
     search = request.args.get("q", "").strip() or None
     tag_filter = request.args.get("tag", "").strip() or None
@@ -33,6 +35,7 @@ def search_artifacts():
 
 @api_bp.route("/tags")
 @login_required
+@limiter.limit("20 per minute")
 def list_tags():
     tags = tag_model.get_all_with_counts()
     return jsonify(tags)
@@ -40,6 +43,7 @@ def list_tags():
 
 @api_bp.route("/iocs")
 @login_required
+@limiter.limit("20 per minute")
 def search_iocs():
     search = request.args.get("q", "").strip() or None
     category_filter = request.args.get("category", "").strip() or None
@@ -62,6 +66,7 @@ def search_iocs():
 
 @api_bp.route("/ioc-tags")
 @login_required
+@limiter.limit("20 per minute")
 def list_ioc_tags():
     tags = ioc_model.get_all_tags_with_counts()
     return jsonify(tags)
@@ -69,6 +74,7 @@ def list_ioc_tags():
 
 @api_bp.route("/tasks")
 @login_required
+@limiter.limit("20 per minute")
 def list_tasks():
     tasks = task_model.get_all()
     return jsonify([
@@ -85,6 +91,7 @@ def list_tasks():
 
 @api_bp.route("/events")
 @login_required
+@limiter.limit("20 per minute")
 def search_events():
     search = request.args.get("q", "").strip() or None
     ioc_filter = request.args.get("ioc", "").strip()
